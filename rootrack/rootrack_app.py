@@ -84,29 +84,35 @@ class MicrAnt:
                     {"name": "File Path", "type": "str"},
                     {"name": "Select", "type": "action"},
                     {"name": "Data Info", "type": "str", "readonly": True},
+                    {"name": "Pixel Size X", "type": "float", "value": 1.0},
+                    {"name": "Pixel Size Y", "type": "float", "value": 1.0},
+                    {"name": "Time Axis", "type": "int", "value": 0},
+                    {"name": "X-Axis", "type": "int", "value": 3},
+                    {"name": "Y-Axis", "type": "int", "value": 2},
+                    {"name": "Z-Axis", "type": "int", "value": 1},
                     # {
                     #     "name": "Automatic Lobulus Selection",
                     #     "type": "bool",
                     #     "value": False,
                     #     "tip": "Skip selection based on annotation color and select lobulus based on Scan Segmentation. ",
                     # },
-                    {
-                        "name": "Annotation Color",
-                        "type": "list",
-                        "tip": "Select lobulus based on annotation color. Skipped if Automatic Lobulus Selection is used.",
-                        "values": {
-                            "None": None,
-                            "White": "#FFFFFF",
-                            "Black": "#000000",
-                            "Red": "#FF0000",
-                            "Green": "#00FF00",
-                            "Blue": "#0000FF",
-                            "Cyan": "#00FFFF",
-                            "Magenta": "#FF00FF",
-                            "Yellow": "#FFFF00",
-                        },
-                        "value": 0,
-                    },
+                    # {
+                    #     "name": "Annotation Color",
+                    #     "type": "list",
+                    #     "tip": "Select lobulus based on annotation color. Skipped if Automatic Lobulus Selection is used.",
+                    #     "values": {
+                    #         "None": None,
+                    #         "White": "#FFFFFF",
+                    #         "Black": "#000000",
+                    #         "Red": "#FF0000",
+                    #         "Green": "#00FF00",
+                    #         "Blue": "#0000FF",
+                    #         "Cyan": "#00FFFF",
+                    #         "Magenta": "#FF00FF",
+                    #         "Yellow": "#FFFF00",
+                    #     },
+                    #     "value": 0,
+                    # },
                     # {'name': 'Boolean', 'type': 'bool', 'value': True, 'tip': "This is a checkbox"},
                     # {'name': 'Color', 'type': 'color', 'value': "FF0", 'tip': "This is a color button"},
                     # BatchFileProcessingParameter(
@@ -144,15 +150,15 @@ class MicrAnt:
                     },
                 ],
             },
-            {
-                "name": "Annotation",
-                "type": "group",
-                "children": [
-                    {"name": "Annotated Parameter", "type": "str", "value": "", "color":"#FFFF00"},
-                    {"name": "Upper Threshold", "type": "float", "value": 2},
-                    {"name": "Lower Threshold", "type": "float", "value": 0},
-                ],
-            },
+            # {
+            #     "name": "Annotation",
+            #     "type": "group",
+            #     "children": [
+            #         {"name": "Annotated Parameter", "type": "str", "value": "", "color":"#FFFF00"},
+            #         {"name": "Upper Threshold", "type": "float", "value": 2},
+            #         {"name": "Lower Threshold", "type": "float", "value": 0},
+            #     ],
+            # },
             {
                 "name": "Processing",
                 "type": "group",
@@ -168,20 +174,20 @@ class MicrAnt:
                     },
                 ],
             },
-            { "name": "Comparative Annotation",
-              "type": "group",
-              "children": [
-                  {
-                      "name": "Left is lower",
-                      "type": "action",
-                      "tip": "Annotated parameter on left image is lower than on right image",
-                  },
-                  {
-                      "name": "Right is lower",
-                      "type": "action",
-                      "tip": "Annotated parameter on right image is lower than on left image",
-                  },
-              ]},
+            # { "name": "Comparative Annotation",
+            #   "type": "group",
+            #   "children": [
+            #       {
+            #           "name": "Left is lower",
+            #           "type": "action",
+            #           "tip": "Annotated parameter on left image is lower than on right image",
+            #       },
+            #       {
+            #           "name": "Right is lower",
+            #           "type": "action",
+            #           "tip": "Annotated parameter on right image is lower than on left image",
+            #       },
+            #   ]},
             {"name": "Save", "type": "action"},
             # {"name": "Run", "type": "action"},
             # {'name': 'Numerical Parameter Options', 'type': 'group', 'children': [
@@ -264,7 +270,7 @@ class MicrAnt:
         if not op.exists(default_dir):
             default_dir = op.expanduser("~")
 
-        filter = "NanoZoomer Digital Pathology Image(*.ndpi)"
+        filter = "TIFF File(*.tiff)"
         # fn, mask = QtWidgets.QFileDialog.getOpenFileName(
         #     self.win,
         #     "Select Input File",
@@ -318,9 +324,9 @@ class MicrAnt:
             {
                 "File Name": str(fn),
                 "File Path": str(inpath),
-                "Annotation Color": self.parameters.param(
-                    "Input", "Annotation Color"
-                ).value(),
+                # "Annotation Color": self.parameters.param(
+                #     "Input", "Annotation Color"
+                # ).value(),
                 "Datetime": datetime.datetime.now().isoformat(" ", "seconds"),
                 "platform.system": platform.uname().system,
                 "platform.node": platform.uname().node,
@@ -441,9 +447,9 @@ class MicrAnt:
         pic.setPixmap(QtGui.QPixmap(logo_fn).scaled(50, 50))
         pic.show()
 
-        self.image1 = PlotCanvas()
-        self.image1.axes.set_axis_off()
-        self.image1.imshow(plt.imread(logo_fn))
+        # self.image1 = PlotCanvas()
+        # self.image1.axes.set_axis_off()
+        # self.image1.imshow(plt.imread(logo_fn))
 
         # self.image1.plot()
         self.image2 = PlotCanvas()
@@ -464,10 +470,10 @@ class MicrAnt:
         # layout.addWidget(QtGui.QLabel("These are two views of the same data. They should always display the same values."), 0,  0, 1, 2)
         layout.addWidget(pic, 1, 0, 1, 1)
         layout.addWidget(t, 2, 0, 1, 1)
-        layout.addWidget(NavigationToolbar(self.image1, win),1, 1, 1, 1)
-        layout.addWidget(self.image1, 2, 1, 1, 1)
-        layout.addWidget(NavigationToolbar(self.image2, win),1, 2, 1, 1)
-        layout.addWidget(self.image2, 2, 2, 1, 1)
+        # layout.addWidget(NavigationToolbar(self.image2, win),1, 2, 1, 1)
+        layout.addWidget(NavigationToolbar(self.image2, win),1, 1, 1, 1)
+        layout.addWidget(self.image2, 2, 1, 1, 1)
+        # layout.addWidget(self.image2, 2, 2, 1, 1)
         # layout.addWidget(t2, 1, 1, 1, 1)
 
         win.show()
@@ -522,6 +528,8 @@ class PlotCanvas(FigureCanvas):
             # self.imshow_obj.set_data(args[0])
         ax.set_title(title)
         self.draw()
+
+
 
 
 
