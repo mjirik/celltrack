@@ -171,7 +171,7 @@ def nogui(input_path, color, common_xlsx, log_level, params, print_params):
         logger.debug(f"Setting new input file from CLI: {input_path}")
         mainapp.set_input_file(input_path)
 
-    mainapp.save_data()
+    mainapp.run()
 
 
 # def install():

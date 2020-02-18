@@ -188,7 +188,7 @@ class MicrAnt:
             #           "tip": "Annotated parameter on right image is lower than on left image",
             #       },
             #   ]},
-            {"name": "Save", "type": "action"},
+            {"name": "Run", "type": "action"},
             # {"name": "Run", "type": "action"},
             # {'name': 'Numerical Parameter Options', 'type': 'group', 'children': [
             #     {'name': 'Units + SI prefix', 'type': 'float', 'value': 1.2e-6, 'step': 1e-6, 'siPrefix': True,
@@ -256,10 +256,15 @@ class MicrAnt:
         logger.debug(msg)
         self.parameters.param("Input", "Data Info").setValue(msg)
 
-    def save_data(self):
+    def run(self):
         logger.debug(self.report.df)
         self._dump_report()
         # self.report.init()
+        pass
+
+    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+
+        # TODO implementation
         pass
 
     def select_file_gui(self):
@@ -421,7 +426,7 @@ class MicrAnt:
         self.parameters.param(
             "Output", "Select Common Spreadsheet File"
         ).sigActivated.connect(self.select_output_spreadsheet_gui)
-        self.parameters.param("Save").sigActivated.connect(self.save_data)
+        self.parameters.param("Run").sigActivated.connect(self.run)
 
         # self.parameters.param("Processing", "Open output dir").setValue(True)
         t = ParameterTree()
@@ -441,7 +446,7 @@ class MicrAnt:
         layout = QtGui.QGridLayout()
         layout.setColumnStretch(0, 2)
         layout.setColumnStretch(1, 3)
-        layout.setColumnStretch(2, 3)
+        # layout.setColumnStretch(2, 3)
         win.setLayout(layout)
         pic = QtGui.QLabel()
         pic.setPixmap(QtGui.QPixmap(logo_fn).scaled(50, 50))
@@ -453,9 +458,9 @@ class MicrAnt:
 
         # self.image1.plot()
         self.image2 = PlotCanvas()
-        self.image2.axes.text(0.1, 0.6, "Set Annotation Parameter")
-        self.image2.axes.text(0.1, 0.5, "Use Left Image Annotation (optimal in first iteration)")
-        self.image2.axes.text(0.1, 0.4, "or")
+        self.image2.axes.text(0.1, 0.6, "Load Tiff file")
+        self.image2.axes.text(0.1, 0.5, "Check pixelsize")
+        self.image2.axes.text(0.1, 0.4, "Run")
         self.image2.axes.text(0.1, 0.3, "Use Comparative Annotation (optimal in further iterations)")
         self.image2.axes.set_axis_off()
         self.image2.draw()
@@ -477,7 +482,7 @@ class MicrAnt:
         # layout.addWidget(t2, 1, 1, 1, 1)
 
         win.show()
-        win.resize(1600, 800)
+        win.resize(800, 600)
         self.win = win
         # win.
         self.qapp = qapp
