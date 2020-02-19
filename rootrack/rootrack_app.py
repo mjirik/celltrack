@@ -436,7 +436,7 @@ class MicrAnt:
 
         # print("run scaffan")
         win = QtGui.QWidget()
-        win.setWindowTitle("RooTrack{}".format(rootrack.__version__))
+        win.setWindowTitle("RooTrack {}".format(rootrack.__version__))
         logo_fn = op.join(op.dirname(__file__), "rootrack_icon512.png")
         app_icon = QtGui.QIcon()
         # app_icon.addFile(logo_fn, QtCore.QSize(16, 16))
