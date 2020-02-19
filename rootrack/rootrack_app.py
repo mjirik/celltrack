@@ -461,7 +461,7 @@ class MicrAnt:
         self.image2.axes.text(0.1, 0.6, "Load Tiff file")
         self.image2.axes.text(0.1, 0.5, "Check pixelsize")
         self.image2.axes.text(0.1, 0.4, "Run")
-        self.image2.axes.text(0.1, 0.3, "Use Comparative Annotation (optimal in further iterations)")
+        # self.image2.axes.text(0.1, 0.3, "Use Comparative Annotation (optimal in further iterations)")
         self.image2.axes.set_axis_off()
         self.image2.draw()
         # self.image2.plot()
