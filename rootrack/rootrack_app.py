@@ -163,7 +163,7 @@ class MicrAnt:
                 "name": "Processing",
                 "type": "group",
                 "children": [
-                    {"name": "Image Level", "type": "int", "value": 2},
+                    # {"name": "Image Level", "type": "int", "value": 2},
                     # self.intensity_rescale.parameters,
                     {
                         "name": "Report Level",
