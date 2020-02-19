@@ -27,4 +27,4 @@ python -m rootrack
 ```
 
 # GUI
-![graphics](docs/graphics/screenshot_gui.png)
+![graphics](docs/graphics/screenshot_gui.PNG)
