@@ -4,7 +4,7 @@ from loguru import logger
 import click.testing
 import shutil
 import pytest
-import rootrack.main_cli
+import celltrack.main_cli
 import io3d
 from pathlib import Path
 import os
@@ -29,7 +29,7 @@ def test_cli_add_image_data():
     runner = click.testing.CliRunner()
     # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
     runner.invoke(
-        rootrack.main_cli.run,
+        celltrack.main_cli.run,
         ["nogui", "-i", pth, "-o", common_xlsx, "-c", "#0000FF"],
     )
 
@@ -44,7 +44,7 @@ def test_cli_print_params():
     runner = click.testing.CliRunner()
     # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
     result = runner.invoke(
-        rootrack.main_cli.run,
+        celltrack.main_cli.run,
         ["nogui", "-pp", "-p", "Processing;Intensity Normalization", "True", "-p", "Annotation;Upper Threshold", "1.5"],
     )
     assert result.output.find(" 'Annotation;Upper Threshold': 1.5,") > 0
@@ -58,7 +58,7 @@ def test_cli_print_params():
     runner = click.testing.CliRunner()
     # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
     result = runner.invoke(
-        rootrack.main_cli.run,
+        celltrack.main_cli.run,
         ["gui", "-pp", "-p", "Processing;Intensity Normalization", "True", "-p", "Annotation;Upper Threshold", "1.5"],
     )
     assert result.output.find(" 'Annotation;Upper Threshold': 1.5,") > 0

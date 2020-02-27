@@ -1,7 +1,7 @@
 # /usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-CLI for rootrack application. It is usefull mainly for adding ndpi files to common xlsx file
+CLI for celltrack application. It is usefull mainly for adding ndpi files to common xlsx file
 """
 
 from loguru import logger
@@ -16,9 +16,9 @@ import ast
 # print("start 5")
 # print("start 6")
 
-from rootrack import rootrack_app
+from celltrack import celltrack_app
 from . import app_tools
-from rootrack import rootrack_app
+from celltrack import celltrack_app
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
@@ -50,7 +50,7 @@ def run(ctx, *args, **kwargs):
     type=click.Path(),
 )
 def set(common_spreadsheet_file=None):
-    mainapp = rootrack_app.MicrAnt()
+    mainapp = celltrack_app.MicrAnt()
     if common_spreadsheet_file is not None:
         mainapp.set_common_spreadsheet_file(path=common_spreadsheet_file)
         logger.info(f"Common spreadsheet file path is : {common_spreadsheet_file}")
@@ -74,7 +74,7 @@ def set(common_spreadsheet_file=None):
 )
 @click.option("--print-params", "-pp", is_flag=True, help="Print parameters")
 def gui(params, print_params):
-    mainapp = rootrack_app.MicrAnt()
+    mainapp = celltrack_app.MicrAnt()
     app_tools.set_parameters_by_path(mainapp.parameters, params)
     if print_params:
         import pprint
@@ -147,7 +147,7 @@ def nogui(input_path, color, common_xlsx, log_level, params, print_params):
     logger.debug(
         f"input path={input_path} color={color}, output_path={common_xlsx}, params={params}"
     )
-    mainapp = rootrack_app.MicrAnt()
+    mainapp = celltrack_app.MicrAnt()
     logger.debug(f"Micrant created")
     app_tools.set_parameters_by_path(mainapp.parameters, params)
     if print_params:

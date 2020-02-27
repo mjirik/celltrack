@@ -38,7 +38,7 @@ from io3d import cachefile
 import platform
 from typing import List, Union
 import exsu
-import rootrack
+import celltrack
 import numpy as np
 import pandas as pd
 
@@ -67,7 +67,7 @@ class MicrAnt:
         # self.evaluation.report = self.report
         self.win: QtGui.QWidget = None
         # self.win = None
-        self.cache = cachefile.CacheFile("~/.rootrack_cache.yaml")
+        self.cache = cachefile.CacheFile("~/.celltrack_cache.yaml")
         # self.cache.update('', path)
         common_spreadsheet_file = self.cache.get_or_save_default(
             "common_spreadsheet_file",
@@ -238,7 +238,7 @@ class MicrAnt:
 
         # timestamp = datetime.datetime.now().strftime("SA_%Y-%m-%d_%H:%M:%S")
         # timestamp = datetime.datetime.now().strftime("SA_%Y%m%d_%H%M%S")
-        default_dir = op.join(default_dir, "rootrack_data.xlsx")
+        default_dir = op.join(default_dir, "celltrack_data.xlsx")
         return default_dir
 
     def _get_file_info(self):
@@ -336,7 +336,7 @@ class MicrAnt:
                 "platform.system": platform.uname().system,
                 "platform.node": platform.uname().node,
                 "platform.processor": platform.uname().processor,
-                "MicrAnt Version": rootrack.__version__,
+                "MicrAnt Version": celltrack.__version__,
                 # "Output Directory Path": str(fn_out),
             }
         )
@@ -436,8 +436,8 @@ class MicrAnt:
 
         # print("run scaffan")
         win = QtGui.QWidget()
-        win.setWindowTitle("RooTrack {}".format(rootrack.__version__))
-        logo_fn = op.join(op.dirname(__file__), "rootrack_icon512.png")
+        win.setWindowTitle("RooTrack {}".format(celltrack.__version__))
+        logo_fn = op.join(op.dirname(__file__), "celltrack_icon512.png")
         app_icon = QtGui.QIcon()
         # app_icon.addFile(logo_fn, QtCore.QSize(16, 16))
         app_icon.addFile(logo_fn)
