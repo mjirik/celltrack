@@ -306,7 +306,6 @@ class MicrAnt:
         self.add_ndpi_file(fn)
         self._show_input_files_info()
 
-
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(
             "Output", "Common Spreadsheet File"
