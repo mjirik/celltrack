@@ -10,6 +10,7 @@ import os.path as op
 path_to_script = op.dirname(op.abspath(__file__))
 # pth = op.join(path_to_script, "../../scaffan/")
 # sys.path.insert(0, pth)
+import skimage.io
 
 from PyQt5 import QtGui
 
@@ -31,8 +32,6 @@ from exsu.report import Report
 import sys
 import datetime
 from pathlib import Path
-import io3d.misc
-from io3d import cachefile
 # import json
 # import time
 import platform
@@ -41,14 +40,18 @@ import exsu
 import celltrack
 import numpy as np
 import pandas as pd
+from PIL import Image
+from PIL.TiffTags import TAGS
 
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 from pyqtgraph.parametertree import Parameter, ParameterTree
 import pyqtgraph.widgets
+import io3d.misc
+from io3d import cachefile
 
 
-class MicrAnt:
+class CellTrack:
     def __init__(self):
 
         self.report: Report = Report()
@@ -90,6 +93,7 @@ class MicrAnt:
                     {"name": "X-Axis", "type": "int", "value": 3},
                     {"name": "Y-Axis", "type": "int", "value": 2},
                     {"name": "Z-Axis", "type": "int", "value": 1},
+                    {"name": "C-Axis", "type": "int", "value": 0, "tip": "Color axis"},
                     # {
                     #     "name": "Automatic Lobulus Selection",
                     #     "type": "bool",
@@ -249,6 +253,7 @@ class MicrAnt:
         #     self.parameters.param("Input", "Data Info").setValue(anim.get_file_info())
 
     def _show_input_files_info(self):
+        self.parameters.param("Input")
         msg = (
                 f"Readed {self._n_readed_regions} regions from {self._n_files} files. "
                 + f"{self._n_files_without_proper_color} without proper color."
@@ -275,7 +280,7 @@ class MicrAnt:
         if not op.exists(default_dir):
             default_dir = op.expanduser("~")
 
-        filter = "TIFF File(*.tiff)"
+        filter = "TIFF File(*.tiff, *.tif)"
         # fn, mask = QtWidgets.QFileDialog.getOpenFileName(
         #     self.win,
         #     "Select Input File",
@@ -303,8 +308,22 @@ class MicrAnt:
         fnparam = self.parameters.param("Input", "File Path")
         fnparam.setValue(fn)
         logger.debug("Set Input File Path to : {}".format(fn))
-        self.add_ndpi_file(fn)
+        self._add_tiff_file(fn)
         self._show_input_files_info()
+
+    def _add_tiff_file(self, fn:str ):
+        img = skimage.io.imread(fn)
+        with Image.open(fn) as img:
+            meta_dict = {TAGS[key]: img.tag[key] for key in img.tag}
+        xr = meta_dict["XResolution"]
+        xres = xr[0][1] / xr[0][0]
+        self.parameters.param("Input", "Pixel Size X").setValue(xres)
+        yr = meta_dict["YResolution"]
+        yres = yr[0][1] / yr[0][0]
+        self.parameters.param("Input", "Pixel Size Y").setValue(yres)
+
+
+        pass
 
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(
