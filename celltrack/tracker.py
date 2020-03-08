@@ -77,17 +77,17 @@ class Tracking:
         # get some parameter value
         sample_weight = float(self.parameters.param("Example Float Param").value())
 
-        # sample output
+        # sample output na konkrétních písmenkách asi nezáleží...
         out = {
             "id_obj": [1, 1, 2, 3],
             "x_px": [100, 100, 100, 100],
             "y_px": [100, 100, 105, 100],
-            "x_mm": [0.1, 0.1, 0.100, 0.1],
-            "y_mm": [0.1, 0.1, 0.105, 0.1],
-            "t_int": [1, 2, 2, 3],
-            "t_s": [1.0, 2.0, 2.0, 3.0],
+            "t_frame": [1, 2, 2, 3],
             "id_parent": [None, None, [1], [1,2]],
         }
         return out
+        # "x_mm": [0.1, 0.1, 0.100, 0.1],
+        # "y_mm": [0.1, 0.1, 0.105, 0.1],
+        # "t_s": [1.0, 2.0, 2.0, 3.0],
         # return (image > 0.5).astype(np.uint8)
 
