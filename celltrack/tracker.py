@@ -61,6 +61,15 @@ class Tracking:
         pass
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+        """
+
+        :param image: [z/t c x y] takhle ty dimenze? nebo jinak?
+        :param resolution:
+        :param time_axis:
+        :param z_axis:
+        :param color_axis:
+        :return:
+        """
         # TODO implementation
 
 
@@ -70,11 +79,14 @@ class Tracking:
 
         # sample output
         out = {
-            "obj_id": [1, 1, 2],
-            "x_px": [ 100, 100, 100],
-            "y_px": [100, 100, 105],
-            "t_s": [1.0, 2.0, 2.0],
-            "parent_id": [None, None, 1],
+            "id_obj": [1, 1, 2, 3],
+            "x_px": [100, 100, 100, 100],
+            "y_px": [100, 100, 105, 100],
+            "x_mm": [0.1, 0.1, 0.100, 0.1],
+            "y_mm": [0.1, 0.1, 0.105, 0.1],
+            "t_int": [1, 2, 2, 3],
+            "t_s": [1.0, 2.0, 2.0, 3.0],
+            "id_parent": [None, None, [1], [1,2]],
         }
         return out
         # return (image > 0.5).astype(np.uint8)
