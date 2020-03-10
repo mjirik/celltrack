@@ -49,6 +49,7 @@ from pyqtgraph.parametertree import Parameter, ParameterTree
 import pyqtgraph.widgets
 import io3d.misc
 from io3d import cachefile
+from . import tracker
 
 
 class CellTrack:
@@ -63,6 +64,7 @@ class CellTrack:
         # self.glcm_textures = satex.GLCMTextureMeasurement()
         # self.slide_segmentation = scaffan.slide_segmentation.ScanSegmentation()
         # self.slide_segmentation.report = self.report
+        self.tracker = tracker.Tracking()
 
         # self.lobulus_processing.set_report(self.report)
         # self.glcm_textures.set_report(self.report)
@@ -168,6 +170,7 @@ class CellTrack:
                 "type": "group",
                 "children": [
                     # {"name": "Image Level", "type": "int", "value": 2},
+                    self.tracker.parameters,
                     # self.intensity_rescale.parameters,
                     {
                         "name": "Report Level",
@@ -208,6 +211,7 @@ class CellTrack:
         self.parameters.param("Input", "File Path").sigValueChanged.connect(
             self._get_file_info
         )
+        self._n_files = None
 
     def set_parameter(self, param_path, value, parse_path=True):
         """
@@ -255,8 +259,7 @@ class CellTrack:
     def _show_input_files_info(self):
         self.parameters.param("Input")
         msg = (
-                f"Readed {self._n_readed_regions} regions from {self._n_files} files. "
-                + f"{self._n_files_without_proper_color} without proper color."
+                f"Readed {self._n_files} files. "
         )
         logger.debug(msg)
         self.parameters.param("Input", "Data Info").setValue(msg)
@@ -297,11 +300,11 @@ class CellTrack:
         self.set_input_files(names)
 
     def set_input_files(self, names):
-        self._n_readed_regions = 0
-        self._n_files_without_proper_color = 0
+        # self._n_readed_regions = 0
+        # self._n_files_without_proper_color = 0
+        self._n_files = len(names)
         for fn in names:
             self.set_input_file(fn)
-        self._n_files = len(names)
 
     def set_input_file(self, fn: Union[Path, str]):
         fn = str(fn)
@@ -309,6 +312,8 @@ class CellTrack:
         fnparam.setValue(fn)
         logger.debug("Set Input File Path to : {}".format(fn))
         self._add_tiff_file(fn)
+        if self._n_files is None:
+            self._n_files = 1
         self._show_input_files_info()
 
     def _add_tiff_file(self, fn:str ):

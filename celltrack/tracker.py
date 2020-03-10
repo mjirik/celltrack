@@ -76,6 +76,7 @@ class Tracking:
         # examples
         # get some parameter value
         sample_weight = float(self.parameters.param("Example Float Param").value())
+        # self.report.
 
         # sample output na konkrétních písmenkách asi nezáleží...
         out = {
