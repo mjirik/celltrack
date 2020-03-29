@@ -523,7 +523,7 @@ class CellTrack:
 
         # print("run scaffan")
         win = QtGui.QWidget()
-        win.setWindowTitle("RooTrack {}".format(celltrack.__version__))
+        win.setWindowTitle("CellTrack {}".format(celltrack.__version__))
         logo_fn = op.join(op.dirname(__file__), "celltrack_icon512.png")
         app_icon = QtGui.QIcon()
         # app_icon.addFile(logo_fn, QtCore.QSize(16, 16))
