@@ -20,10 +20,11 @@ qapp = QtWidgets.QApplication(sys.argv)
 
 
 def test_read_tiff():
-    path = io3d.datasets.join_path("biology/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+    path = io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
     ct = celltrack.celltrack_app.CellTrack()
     ct.set_input_file(path)
     ct.start_gui(qapp=qapp, skip_exec=True)
+    ct.run()
 
 
     # assert Path("g:/") in Path(path).parents

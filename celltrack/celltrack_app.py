@@ -89,8 +89,18 @@ class CellTrack:
                     {"name": "File Path", "type": "str"},
                     {"name": "Select", "type": "action"},
                     {"name": "Data Info", "type": "str", "readonly": True},
-                    {"name": "Pixel Size X", "type": "float", "value": 1.0},
-                    {"name": "Pixel Size Y", "type": "float", "value": 1.0},
+                    {"name": "Pixel Size X", "type": "float", "value": 1.0,
+                     "suffix": "m",
+                     "siPrefix": True,
+                     },
+                    {"name": "Pixel Size Y", "type": "float", "value": 1.0,
+                     "suffix": "m",
+                     "siPrefix": True,
+                     },
+                    {"name": "Time Resolution", "type": "float", "value": 1.0,
+                     "suffix": "s",
+                     "siPrefix": False,
+                     },
                     {"name": "Time Axis", "type": "int", "value": 0},
                     {"name": "X-Axis", "type": "int", "value": 3},
                     {"name": "Y-Axis", "type": "int", "value": 2},
@@ -212,6 +222,7 @@ class CellTrack:
             self._get_file_info
         )
         self._n_files = None
+        self.imagedata:np.ndarray = None
 
     def set_parameter(self, param_path, value, parse_path=True):
         """
@@ -266,12 +277,40 @@ class CellTrack:
 
     def run(self):
         logger.debug(self.report.df)
+        xaxis = self.parameters.param(
+            "Input", "X-Axis" ).value()
+        yaxis = self.parameters.param(
+            "Input", "Y-Axis" ).value()
+        taxis = self.parameters.param(
+            "Input", "Time Axis" ).value()
+        time_resolution = float(self.parameters.param(
+            "Input", "Time Resolution" ).value())
+        sl = list((np.asarray(self.imagedata.shape) / 2).astype(int))
+        # sl = [0] * self.imagedata.ndim
+        sl[int(xaxis)] = slice(None)
+        sl[int(yaxis)] = slice(None)
+        sl[int(taxis)] = slice(None)
+
+        im = self.imagedata[tuple(sl)]
+        xres = self.parameters.param("Input", "Pixel Size X").value()
+        yres = self.parameters.param("Input", "Pixel Size Y").value()
+        resolution = np.asarray([xres, yres], dtype=np.float)
+        # self.image2.imshow(im)
         self._dump_report()
         # self.report.init()
+        self.process_image(im, resolution=resolution, time_resolution=time_resolution)
         pass
 
-    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+        """
 
+        :param image: 3D image 1st axis is time, second and third is image space
+        :param resolution:
+        :param time_axis:
+        :param z_axis:
+        :param color_axis:
+        :return:
+        """
         # TODO implementation
         pass
 
@@ -298,6 +337,7 @@ class CellTrack:
             self.win, "Select Input Files", directory=default_dir, filter=filter
         )
         self.set_input_files(names)
+        self.show_image()
 
     def set_input_files(self, names):
         # self._n_readed_regions = 0
@@ -317,18 +357,25 @@ class CellTrack:
         self._show_input_files_info()
 
     def _add_tiff_file(self, fn:str ):
-        img = skimage.io.imread(fn)
         with Image.open(fn) as img:
             meta_dict = {TAGS[key]: img.tag[key] for key in img.tag}
+        key_value = [couplestring.split("=") for couplestring in meta_dict["ImageDescription"][0].split("\n")]
+        image_description = {kv[0]: kv[1] for kv in key_value if len(kv) > 1}
+
+        unit_multiplicator = 1
+        if "unit" in image_description:
+            if image_description["unit"] == "micron":
+                unit_multiplicator = 0.000001
         xr = meta_dict["XResolution"]
-        xres = xr[0][1] / xr[0][0]
+        xres = (xr[0][1] / xr[0][0]) * unit_multiplicator
         self.parameters.param("Input", "Pixel Size X").setValue(xres)
         yr = meta_dict["YResolution"]
-        yres = yr[0][1] / yr[0][0]
+        yres = (yr[0][1] / yr[0][0]) * unit_multiplicator
         self.parameters.param("Input", "Pixel Size Y").setValue(yres)
 
+        img = skimage.io.imread(fn)
+        self.imagedata:np.ndarray = img
 
-        pass
 
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(
@@ -427,6 +474,23 @@ class CellTrack:
     # self.image2.setPixmap(QtGui.QPixmap(logo_fn).scaled(100, 100))
     # self.image2.show()
 
+    def show_image(self):
+        xaxis = self.parameters.param(
+            "Input", "X-Axis" ).value()
+        yaxis = self.parameters.param(
+            "Input", "Y-Axis" ).value()
+        taxis = self.parameters.param(
+            "Input", "Time Axis" ).value()
+        sl = list((np.asarray(self.imagedata.shape) / 2).astype(int))
+        # sl = [0] * self.imagedata.ndim
+        sl[int(xaxis)] = slice(None)
+        sl[int(yaxis)] = slice(None)
+
+        im = self.imagedata[tuple(sl)]
+        # TODO remove texts somehow
+        for txt in self.image2.fig.texts:
+            txt.set_visible(False)
+        self.image2.imshow(im)
 
 
 
