@@ -22,8 +22,8 @@ git clone git@github.com:mjirik/rootrack.git
 Run
 
 ```cmd
-cd rootrack
-python -m rootrack
+cd celltrack
+python -m celltrack
 ```
 
 # GUI
