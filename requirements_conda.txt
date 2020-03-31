@@ -1,2 +1,4 @@
 exsu
 io3d
+click
+pyqtgraph

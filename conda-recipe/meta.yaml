@@ -43,12 +43,15 @@ requirements:
     # - { pin_compatible('imma', max_pin='x.x') }
     - {{ pin_compatible('exsu', max_pin='x.x') }}
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
-    -
+    - click
+    - pyqtgraph
 
   run:
     - python
     - {{ pin_compatible('exsu', max_pin='x.x') }}
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
+    - click
+    - pyqtgraph
     # - numpy
     # - pyqt 4.11.* # [not win]
     # - pyqt 4.12.2 # [win]
