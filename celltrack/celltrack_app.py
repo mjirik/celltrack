@@ -55,7 +55,8 @@ from . import tracker
 class CellTrack:
     def __init__(self):
 
-        self.report: Report = Report()
+        self.report: Report = Report(check_version_of=["numpy", "scipy", "skimage"])
+        self.report.set_persistent_cols({"celltrack_version": celltrack.__version__})
         # self.report.level = 50
 
         self.qapp = None
@@ -269,8 +270,9 @@ class CellTrack:
 
     def _show_input_files_info(self):
         self.parameters.param("Input")
+        sh = self.imagedata.shape if self.imagedata is not None else "None"
         msg = (
-                f"Readed {self._n_files} files. "
+                f"Readed {self._n_files} files. Shape of first file={sh}"
         )
         logger.debug(msg)
         self.parameters.param("Input", "Data Info").setValue(msg)
@@ -296,9 +298,10 @@ class CellTrack:
         yres = self.parameters.param("Input", "Pixel Size Y").value()
         resolution = np.asarray([xres, yres], dtype=np.float)
         # self.image2.imshow(im)
-        self._dump_report()
         # self.report.init()
+        self.report.add_cols_to_actual_row({"timestamp": str(datetime.datetime.now())})
         self.process_image(im, resolution=resolution, time_resolution=time_resolution)
+        self._dump_report()
         pass
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
@@ -366,12 +369,17 @@ class CellTrack:
         if "unit" in image_description:
             if image_description["unit"] == "micron":
                 unit_multiplicator = 0.000001
-        xr = meta_dict["XResolution"]
-        xres = (xr[0][1] / xr[0][0]) * unit_multiplicator
-        self.parameters.param("Input", "Pixel Size X").setValue(xres)
-        yr = meta_dict["YResolution"]
-        yres = (yr[0][1] / yr[0][0]) * unit_multiplicator
-        self.parameters.param("Input", "Pixel Size Y").setValue(yres)
+        try:
+            xr = meta_dict["XResolution"]
+            logger.debug(f"xr={xr}")
+            xres = (xr[0][1] / xr[0][0]) * unit_multiplicator
+            self.parameters.param("Input", "Pixel Size X").setValue(xres)
+            yr = meta_dict["YResolution"]
+            logger.debug(f"yr={xr}")
+            yres = (yr[0][1] / yr[0][0]) * unit_multiplicator
+            self.parameters.param("Input", "Pixel Size Y").setValue(yres)
+        except Exception as e:
+            logger.warning("Resolution not detected properly")
 
         img = skimage.io.imread(fn)
         self.imagedata:np.ndarray = img

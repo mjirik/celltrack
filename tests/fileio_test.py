@@ -13,9 +13,17 @@ import io3d.datasets
 from pathlib import Path
 import os
 
+@pytest.fixture
+def path_tubhistw():
+    return io3d.datasets.join_path("biology/orig/general/tubhiswt_C1.ome.tif", get_root=True)
+                                    # biology\orig\general
 
-def test_read_tiff():
-    path = io3d.datasets.join_path("biology/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+
+def test_read_tiff(path_tubhistw):
+    path = path_tubhistw
+    logger.debug(f"pth={path}")
+    # path=path_tubhistw
+    # path = io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
     ct = celltrack.celltrack_app.CellTrack()
     ct.set_input_file(path)
 

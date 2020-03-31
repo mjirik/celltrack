@@ -9,15 +9,25 @@ import io3d
 from pathlib import Path
 import os
 
+@pytest.fixture
+def path_tubhistw():
+    return io3d.datasets.join_path("biology/orig/general/tubhiswt_C1.ome.tif", get_root=True)
 
-def test_cli_add_image_data():
+
+@pytest.fixture
+def path_DIIVenus():
+    return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+
+
+def test_cli_add_image_data(path_tubhistw):
     """
     Add image data to common spreadsheet file.
     :return:
     """
-    pth = io3d.datasets.join_path(
-        "medical", "orig", "sample_data", "SCP003", "SCP003.ndpi", get_root=True
-    )
+    pth = path_tubhistw
+    # pth = io3d.datasets.join_path(
+    #    "biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True
+    # )
 
     logger.debug(f"pth={pth}, exists={Path(pth).exists()}")
     common_xlsx = Path("test_data.xlsx")
@@ -30,7 +40,7 @@ def test_cli_add_image_data():
     # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
     runner.invoke(
         celltrack.main_cli.run,
-        ["nogui", "-i", pth, "-o", common_xlsx, "-c", "#0000FF"],
+        ["nogui", "-i", pth, "-o", common_xlsx],
     )
 
     assert common_xlsx.exists()
@@ -45,20 +55,7 @@ def test_cli_print_params():
     # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
     result = runner.invoke(
         celltrack.main_cli.run,
-        ["nogui", "-pp", "-p", "Processing;Intensity Normalization", "True", "-p", "Annotation;Upper Threshold", "1.5"],
+        ["nogui", "-pp", "-p", "Input;Time Axis", "1", "-p", "Processing;Report Level", "55"],
     )
-    assert result.output.find(" 'Annotation;Upper Threshold': 1.5,") > 0
+    assert result.output.find("'Input;Time Axis': 1,") > 0
 
-def test_cli_print_params():
-    """
-    Add image data to common spreadsheet file.
-    :return:
-    """
-
-    runner = click.testing.CliRunner()
-    # runner.invoke(anwa.main_click.nogui, ["-i", str(pth)])
-    result = runner.invoke(
-        celltrack.main_cli.run,
-        ["gui", "-pp", "-p", "Processing;Intensity Normalization", "True", "-p", "Annotation;Upper Threshold", "1.5"],
-    )
-    assert result.output.find(" 'Annotation;Upper Threshold': 1.5,") > 0

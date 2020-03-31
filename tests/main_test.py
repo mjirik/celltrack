@@ -16,11 +16,24 @@ import os
 from PyQt5 import QtWidgets
 # from datetime import datetime
 
+# from . import fixtures
+# from fixtures import path_tubhistw, path_DIIVenus
+
 qapp = QtWidgets.QApplication(sys.argv)
 
+@pytest.fixture
+def path_tubhistw():
+    return io3d.datasets.join_path("biology/orig/general/tubhiswt_C1.ome.tif", get_root=True)
 
-def test_read_tiff():
-    path = io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+
+@pytest.fixture
+def path_DIIVenus():
+    return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+
+def test_read_tiff(path_tubhistw):
+    path = path_tubhistw
+    # path = io3d.datasets.join_path("biology/orig/general/tubhiswt_C1.ome.tif", get_root=True)
+    logger.debug(f"file path={str(path)}")
     ct = celltrack.celltrack_app.CellTrack()
     ct.set_input_file(path)
     ct.start_gui(qapp=qapp, skip_exec=True)
