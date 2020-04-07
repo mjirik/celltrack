@@ -80,6 +80,7 @@ install:
 #    - python -m io3d.datasets -v -l CMU-1 CMU-1-annotation SCP003
 #    - python -m io3d.datasets -l https://downloads.openmicroscopy.org/images/OME-TIFF/2016-06/bioformats-artificial/time-series.ome.tif:biology/orig/roots
     - python -m io3d.datasets -l https://downloads.openmicroscopy.org/images/OME-TIFF/2016-06/tubhiswt-3D/tubhiswt_C1.ome.tif:biology/orig/general
+    - python -m io3d.datasets -l R2D2
 #    - pip install -r requirements_pip.txt
 #    - conda list -e
 #    - python -m io3d.datasets -l 3Dircadb1.1 jatra_5mm exp_small sliver_training_001 io3d_sample_data head volumetrie
