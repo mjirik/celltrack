@@ -314,8 +314,8 @@ class CellTrack:
         :param color_axis:
         :return:
         """
-        # TODO implementation
-        pass
+        # TODO implementation in tracker.process_imgage
+        self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution)
 
     def select_file_gui(self):
         from PyQt5 import QtWidgets

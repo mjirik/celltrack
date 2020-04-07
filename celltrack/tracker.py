@@ -60,7 +60,8 @@ class Tracking:
         model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
         pass
 
-    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+    # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         """
 
         :param image: [z/t c x y] takhle ty dimenze? nebo jinak?
@@ -78,7 +79,6 @@ class Tracking:
         sample_weight = float(self.parameters.param("Example Float Param").value())
         # self.report.
 
-        # sample output na konkrétních písmenkách asi nezáleží...
         out = {
             "id_obj": [1, 1, 2, 3],
             "x_px": [100, 100, 100, 100],
