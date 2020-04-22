@@ -17,7 +17,7 @@ import ast
 # print("start 6")
 
 from celltrack import celltrack_app
-from . import app_tools
+from celltrack import app_tools
 from celltrack import celltrack_app
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
