@@ -4,3 +4,4 @@
 
 * [added] preview
 * [added] cell tracking
+* [added] export to spreadsheet file
