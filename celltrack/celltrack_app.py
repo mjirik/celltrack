@@ -11,8 +11,10 @@ path_to_script = op.dirname(op.abspath(__file__))
 # pth = op.join(path_to_script, "../../scaffan/")
 # sys.path.insert(0, pth)
 import skimage.io
+import skimage.measure
 import seaborn as sns
 from matplotlib import patches
+from .tracker import TrackerManager, Tracker
 
 from PyQt5 import QtGui
 
@@ -310,7 +312,9 @@ class CellTrack:
         # self.report.init()
         self.add_std_data_to_rows_persistent()
         # self.report.add_cols_to_actual_row({})
-        self.process_image(im, resolution=resolution, time_resolution=time_resolution)
+        trackers = self.process_image(im, resolution=resolution, time_resolution=time_resolution)
+        self.trackers_to_report(trackers, resolution, time_resolution, sl.copy(), int(caxis), int(taxis))
+
         self._draw_output()
         self._dump_report()
 
@@ -351,7 +355,53 @@ class CellTrack:
         :return:
         """
         # TODO implementation in tracker.process_imgage
-        self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution)
+        trackers = self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution)
+        return trackers
+
+    def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
+        if self.report:
+            for tr_id, tracker in enumerate(trackers.tracker_list):
+                logger.debug(f"tracker={tr_id}, len(tracker.frame)={len(tracker.frame)}")
+                for fr_i, fr in enumerate(tracker.frame):
+                    row = {
+                        "id_obj": tr_id,
+                        "y_px": (tracker.bbox[fr_i][0] + tracker.bbox[fr_i][2])/2.,
+                        "x_px": (tracker.bbox[fr_i][1] + tracker.bbox[fr_i][3])/2.,
+                        "bbox_0_y_px": tracker.bbox[fr_i][0],
+                        "bbox_0_x_px": tracker.bbox[fr_i][1],
+                        "bbox_1_y_px": tracker.bbox[fr_i][2],
+                        "bbox_1_x_px": tracker.bbox[fr_i][3],
+                        "t_frame": tracker.frame[fr_i],
+                        # TODO prosím doplnit jméno předka
+                        "id_parent": None,
+                    }
+
+
+                    #measure intensity
+                    for c in range(self.imagedata.shape[caxis]):
+                        sl[caxis] = c
+                        sl[taxis] = tracker.frame[fr_i]
+                        logger.debug(f"slice={sl}")
+                        im = self.imagedata[tuple(sl)]
+                        # region:skimage.measure.RegionProperties = tracker.region[fr_i]
+                        region = tracker.region[fr_i]
+                        # np.var(im[tracker.region])
+                        minr, minc, maxr, maxc = region.bbox
+                        imcr = im[minr:maxr, minc:maxc]
+
+                        row[f"intensity mean in channel {c}"] = np.mean(imcr[region.image])
+                        row[f"intensity var in channel {c}"] = np.var(imcr[region.image])
+
+                    self.report.add_cols_to_actual_row(row)
+                    self.report.finish_actual_row()
+        df = self.report.df
+        df["x [mm]"] = df["x_px"] * resolution[0]
+        df["y [mm]"] = df["y_px"] * resolution[1]
+        df["t [s]"] = df["t_frame"] * time_resolution
+        df["bbox left [mm]"] = df["bbox_0_y_px"] * resolution[1]
+        df["bbox bottom [mm]"] = df["bbox_1_x_px"] * resolution[0]
+        df["bbox right [mm]"] = df["bbox_1_y_px"] * resolution[1]
+        df["bbox top [mm]"] = df["bbox_0_x_px"] * resolution[0]
 
     def select_file_gui(self):
         from PyQt5 import QtWidgets

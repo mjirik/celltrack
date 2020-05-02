@@ -30,7 +30,8 @@ def path_tubhistw():
 def path_DIIVenus():
     # return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
     # return io3d.datasets.join_path("biology/orig/roots/examples/R2D2-20x-1.tif", get_root=True)
-    return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+    # return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
+    return io3d.datasets.join_path("biology/orig/roots/2channel/20200305-r2d2-PRE3.tif", get_root=True)
 
 
 def test_read_tiff(path_DIIVenus):

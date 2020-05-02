@@ -35,6 +35,8 @@ class Tracker:
         self.frame.append(frame)
         self.region.append(region)
 
+        # TODO občas má tracker dva záznamy v jednom framu a zjevně jde o chybu.
+
     def status_off(self):
         self.status = 0
 
@@ -186,7 +188,8 @@ class Tracking:
         #     contours = measure.find_contours(morph, 0.8)
 
         labeled_cells, _ = ndi.label(morph)
-        regions = measure.regionprops(labeled_cells)
+        # intensity image is added to provide data for further statistics computation
+        regions = measure.regionprops(labeled_cells, intensity_image=frame)
 
         return regions
 
@@ -217,23 +220,24 @@ class Tracking:
         return manager
 
     def tracker_to_report(self, trackers:TrackerManager):
-        if self.report:
-            for tr_id, tracker in enumerate(trackers.tracker_list):
-                for i, fr in enumerate(tracker.frame):
-                    row = {
-                        "id_obj": tr_id,
-                        "y_px": (tracker.bbox[i][0] + tracker.bbox[i][2])/2.,
-                        "x_px": (tracker.bbox[i][1] + tracker.bbox[i][3])/2.,
-                        "bbox_0_y_px": tracker.bbox[i][0],
-                        "bbox_0_x_px": tracker.bbox[i][1],
-                        "bbox_1_y_px": tracker.bbox[i][2],
-                        "bbox_1_x_px": tracker.bbox[i][3],
-                        "t_frame": tracker.frame[i],
-                        # TODO prosím doplnit jméno předka
-                        "id_parent": None,
-                    }
-                    self.report.add_cols_to_actual_row(row)
-                    self.report.finish_actual_row()
+        pass
+        # if self.report:
+        #     for tr_id, tracker in enumerate(trackers.tracker_list):
+        #         for i, fr in enumerate(tracker.frame):
+        #             row = {
+        #                 "id_obj": tr_id,
+        #                 "y_px": (tracker.bbox[i][0] + tracker.bbox[i][2])/2.,
+        #                 "x_px": (tracker.bbox[i][1] + tracker.bbox[i][3])/2.,
+        #                 "bbox_0_y_px": tracker.bbox[i][0],
+        #                 "bbox_0_x_px": tracker.bbox[i][1],
+        #                 "bbox_1_y_px": tracker.bbox[i][2],
+        #                 "bbox_1_x_px": tracker.bbox[i][3],
+        #                 "t_frame": tracker.frame[i],
+        #                 # TODO prosím doplnit jméno předka
+        #                 "id_parent": None,
+        #             }
+        #             self.report.add_cols_to_actual_row(row)
+        #             self.report.finish_actual_row()
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
     # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
@@ -265,16 +269,16 @@ class Tracking:
         #         break
 
         trackers = self.cell_tracker(frames)
-        self.tracker_to_report(trackers)
+        # self.tracker_to_report(trackers)
 
-        out = {
-            "id_obj": [1, 1, 2, 3],
-            "x_px": [100, 100, 100, 100],
-            "y_px": [100, 100, 105, 100],
-            "t_frame": [1, 2, 2, 3],
-            "id_parent": [None, None, [1], [1, 2]],
-        }
-        return out
+        # out = {
+        #     "id_obj": [1, 1, 2, 3],
+        #     "x_px": [100, 100, 100, 100],
+        #     "y_px": [100, 100, 105, 100],
+        #     "t_frame": [1, 2, 2, 3],
+        #     "id_parent": [None, None, [1], [1, 2]],
+        # }
+        return trackers
 
 
         # "x_mm": [0.1, 0.1, 0.100, 0.1],
