@@ -40,6 +40,7 @@ import exsu
 import celltrack
 import numpy as np
 import pandas as pd
+
 from PIL import Image
 from PIL.TiffTags import TAGS
 
@@ -49,7 +50,7 @@ from pyqtgraph.parametertree import Parameter, ParameterTree
 import pyqtgraph.widgets
 import io3d.misc
 from io3d import cachefile
-from . import tracker
+from celltrack import tracker
 
 
 class CellTrack:
