@@ -109,7 +109,7 @@ class CellTrack:
                     {"name": "X-Axis", "type": "int", "value": 3},
                     {"name": "Y-Axis", "type": "int", "value": 2},
                     {"name": "Z-Axis", "type": "int", "value": 1},
-                    {"name": "C-Axis", "type": "int", "value": 0, "tip": "Color axis"},
+                    {"name": "C-Axis", "type": "int", "value": 1, "tip": "Color axis"},
                     {"name": "Tracked Channel", "type": "int", "value": 0, "tip": "Channel used for tracking"},
                     {"name": "Preview Time", "type": "int", "value": -1, "tip": "Frame number used for preview"},
 
@@ -317,7 +317,8 @@ class CellTrack:
     def _draw_output(self):
         dfs = self.report.df
         ax = self.image2.axes
-        sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax)
+        pal = sns.color_palette(None, len(dfs.id_obj.unique()))
+        sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
         # rect = patches.Rectangle((50, 100), 40, 30, linewidth=1, edgecolor='r', facecolor='none')
         # Add the patch to the Axes
 
@@ -331,7 +332,7 @@ class CellTrack:
                  dflast.bbox_0_y_px[i]),
                 dflast.bbox_1_x_px[i] - dflast.bbox_0_x_px[i],
                 dflast.bbox_1_y_px[i] - dflast.bbox_0_y_px[i],
-                linewidth=1, edgecolor='r', facecolor='none'
+                linewidth=1, edgecolor=pal[i], facecolor='none'
             )
 
             # ax = fig.axes[0]
@@ -375,6 +376,7 @@ class CellTrack:
             self.win, "Select Input Files", directory=default_dir, filter=filter
         )
         self.set_input_files(names)
+        self._should_clear_axes = True
         self.show_image()
 
     def set_input_files(self, names):
@@ -581,6 +583,7 @@ class CellTrack:
         self.parameters.param("Input", "Time Axis").sigValueChanged.connect(self._on_param_change)
         self.parameters.param("Input", "C-Axis").sigValueChanged.connect(self._on_param_change)
         self.parameters.param("Input", "Tracked Channel").sigValueChanged.connect(self._on_param_change)
+        self.parameters.param("Input", "Preview Time").sigValueChanged.connect(self._on_param_change)
 
         # self.parameters.param("Processing", "Open output dir").setValue(True)
         t = ParameterTree()
@@ -636,7 +639,7 @@ class CellTrack:
         # layout.addWidget(t2, 1, 1, 1, 1)
 
         win.show()
-        win.resize(800, 600)
+        win.resize(1200, 800)
         self.win = win
         # win.
         self.qapp = qapp
