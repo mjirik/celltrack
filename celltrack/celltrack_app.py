@@ -496,8 +496,12 @@ class CellTrack:
 
         im = self.imagedata[tuple(sl)]
         # TODO remove texts somehow
-        for txt in self.image2.fig.texts:
-            txt.set_visible(False)
+        # for txt in self.image2.fig.texts:
+        #     txt.set_visible(False)
+        # TODO Try this
+        # if len(self.image2.fig.texts) > 0:
+        #     self.image2.axes.clear()
+
         self.image2.imshow(im)
 
 
