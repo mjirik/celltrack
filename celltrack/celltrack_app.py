@@ -66,7 +66,7 @@ class CellTrack:
         # self.glcm_textures = satex.GLCMTextureMeasurement()
         # self.slide_segmentation = scaffan.slide_segmentation.ScanSegmentation()
         # self.slide_segmentation.report = self.report
-        self.tracker = tracker.Tracking()
+        self.tracker = tracker.Tracking(report=self.report)
 
         # self.lobulus_processing.set_report(self.report)
         # self.glcm_textures.set_report(self.report)
@@ -300,7 +300,8 @@ class CellTrack:
         resolution = np.asarray([xres, yres], dtype=np.float)
         # self.image2.imshow(im)
         # self.report.init()
-        self.report.add_cols_to_actual_row({"timestamp": str(datetime.datetime.now())})
+        self.add_std_data_to_rows_persistent()
+        # self.report.add_cols_to_actual_row({})
         self.process_image(im, resolution=resolution, time_resolution=time_resolution)
         self._dump_report()
         pass
@@ -397,14 +398,16 @@ class CellTrack:
         exsu.report.append_df_to_excel(filename, self.report.df)
         self.report.init()
 
-    def add_std_data_to_row(self, inpath: Path, annotation_id):
-        datarow = {}
-        datarow["Annotation ID"] = annotation_id
+    def add_std_data_to_rows_persistent(self):
+        # datarow = {}
+        # datarow["Annotation ID"] = annotation_id
+        inpath = Path(self.parameters.param("Input", "File Path").value())
 
         # self.anim.annotations.
         fn = inpath.parts[-1]
         # fn_out = self.parameters.param("Output", "Directory Path").value()
-        self.report.add_cols_to_actual_row(
+        # self.report.add_cols_to_actual_row(
+        self.report.set_persistent_cols(
             {
                 "File Name": str(fn),
                 "File Path": str(inpath),
@@ -416,12 +419,13 @@ class CellTrack:
                 "platform.node": platform.uname().node,
                 "platform.processor": platform.uname().processor,
                 "MicrAnt Version": celltrack.__version__,
+                "timestamp": str(datetime.datetime.now())
                 # "Output Directory Path": str(fn_out),
             }
         )
         # self.report.add_cols_to_actual_row(self.parameters_to_dict())
 
-        self.report.add_cols_to_actual_row(datarow)
+        # self.report.add_cols_to_actual_row(datarow)
 
 
     # def select_output_dir_gui(self):

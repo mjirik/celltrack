@@ -10,6 +10,7 @@ import numpy as np
 from pathlib import Path
 import skimage.io
 from scipy import ndimage as ndi
+from typing import List
 
 from skimage import data
 from skimage import measure
@@ -46,7 +47,7 @@ class Tracker:
 
 class TrackerManager:
     def __init__(self):
-        self.tracker_list = []
+        self.tracker_list:List[Tracker] = []
         self.tracker_count = 0
         self.current_frame = -1
         self.iou_mat = []
@@ -189,7 +190,7 @@ class Tracking:
 
         return regions
 
-    def cell_tracker(self, frames, regions=0):
+    def cell_tracker(self, frames, regions=0) -> TrackerManager:
 
         manager = TrackerManager()
 
@@ -215,6 +216,24 @@ class Tracking:
 
         return manager
 
+    def tracker_to_report(self, trackers:TrackerManager):
+        if self.report:
+            for tr_id, tracker in enumerate(trackers.tracker_list):
+                for i, fr in enumerate(tracker.frame):
+                    tracker.bbox[i][0]
+                    row = {
+                        "id_obj": tr_id,
+                        "x_px": tracker.bbox[i][0],
+                        "y_px": tracker.bbox[i][0],
+                        "t_frame": tracker.frame[i],
+                        # TODO prosím doplnit jméno předka
+                        "id_parent": None,
+                    }
+                    self.report.add_cols_to_actual_row(row)
+                    self.report.finish_actual_row()
+
+
+        pass
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
     # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
@@ -246,6 +265,7 @@ class Tracking:
         #         break
 
         trackers = self.cell_tracker(frames)
+        self.tracker_to_report(trackers)
 
         out = {
             "id_obj": [1, 1, 2, 3],
@@ -255,6 +275,8 @@ class Tracking:
             "id_parent": [None, None, [1], [1, 2]],
         }
         return out
+
+
         # "x_mm": [0.1, 0.1, 0.100, 0.1],
         # "y_mm": [0.1, 0.1, 0.105, 0.1],
         # "t_s": [1.0, 2.0, 2.0, 3.0],

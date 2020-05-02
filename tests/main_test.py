@@ -32,8 +32,8 @@ def path_DIIVenus():
     return io3d.datasets.join_path("biology/orig/roots/examples/R2D2-20x-1.tif", get_root=True)
 
 
-def test_read_tiff(path_tubhistw):
-    path = path_tubhistw
+def test_read_tiff(path_DIIVenus):
+    path = path_DIIVenus
     # path = io3d.datasets.join_path("biology/orig/general/tubhiswt_C1.ome.tif", get_root=True)
     logger.debug(f"file path={str(path)}")
     ct = celltrack.celltrack_app.CellTrack()
