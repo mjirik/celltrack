@@ -29,7 +29,8 @@ def path_tubhistw():
 @pytest.fixture
 def path_DIIVenus():
     # return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
-    return io3d.datasets.join_path("biology/orig/roots/examples/R2D2-20x-1.tif", get_root=True)
+    # return io3d.datasets.join_path("biology/orig/roots/examples/R2D2-20x-1.tif", get_root=True)
+    return io3d.datasets.join_path("biology/orig/roots/examples/DIIVenus-20x-2.tif", get_root=True)
 
 
 def test_read_tiff(path_DIIVenus):

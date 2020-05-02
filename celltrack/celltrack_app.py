@@ -11,6 +11,8 @@ path_to_script = op.dirname(op.abspath(__file__))
 # pth = op.join(path_to_script, "../../scaffan/")
 # sys.path.insert(0, pth)
 import skimage.io
+import seaborn as sns
+from matplotlib import patches
 
 from PyQt5 import QtGui
 
@@ -108,6 +110,9 @@ class CellTrack:
                     {"name": "Y-Axis", "type": "int", "value": 2},
                     {"name": "Z-Axis", "type": "int", "value": 1},
                     {"name": "C-Axis", "type": "int", "value": 0, "tip": "Color axis"},
+                    {"name": "Tracked Channel", "type": "int", "value": 0, "tip": "Channel used for tracking"},
+                    {"name": "Preview Time", "type": "int", "value": -1, "tip": "Frame number used for preview"},
+
                     # {
                     #     "name": "Automatic Lobulus Selection",
                     #     "type": "bool",
@@ -225,6 +230,7 @@ class CellTrack:
         )
         self._n_files = None
         self.imagedata:np.ndarray = None
+        self._should_clear_axes = True
 
     def set_parameter(self, param_path, value, parse_path=True):
         """
@@ -280,16 +286,18 @@ class CellTrack:
 
     def run(self):
         logger.debug(self.report.df)
-        xaxis = self.parameters.param(
-            "Input", "X-Axis" ).value()
-        yaxis = self.parameters.param(
-            "Input", "Y-Axis" ).value()
-        taxis = self.parameters.param(
-            "Input", "Time Axis" ).value()
-        time_resolution = float(self.parameters.param(
-            "Input", "Time Resolution" ).value())
-        sl = list((np.asarray(self.imagedata.shape) / 2).astype(int))
+
+        xaxis = self.parameters.param("Input", "X-Axis" ).value()
+        yaxis = self.parameters.param("Input", "Y-Axis" ).value()
+        taxis = self.parameters.param("Input", "Time Axis" ).value()
+        caxis = self.parameters.param("Input", "C-Axis" ).value()
+        cvalue= self.parameters.param("Input", "Tracked Channel" ).value()
+        tvalue= self.parameters.param("Input", "Preview Time" ).value()
+        # sl = list((np.asarray(self.imagedata.shape) - 1).astype(int)) # last image
+        sl = list((np.asarray(self.imagedata.shape) / 2).astype(int)) # middle image
+        time_resolution = float(self.parameters.param("Input", "Time Resolution").value())
         # sl = [0] * self.imagedata.ndim
+        sl[int(caxis)] = int(cvalue)
         sl[int(xaxis)] = slice(None)
         sl[int(yaxis)] = slice(None)
         sl[int(taxis)] = slice(None)
@@ -303,8 +311,33 @@ class CellTrack:
         self.add_std_data_to_rows_persistent()
         # self.report.add_cols_to_actual_row({})
         self.process_image(im, resolution=resolution, time_resolution=time_resolution)
+        self._draw_output()
         self._dump_report()
-        pass
+
+    def _draw_output(self):
+        dfs = self.report.df
+        ax = self.image2.axes
+        sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax)
+        # rect = patches.Rectangle((50, 100), 40, 30, linewidth=1, edgecolor='r', facecolor='none')
+        # Add the patch to the Axes
+
+        dflast = dfs.groupby("id_obj").last()
+
+        for i in range(len(dflast)):
+            dflast.bbox_0_x_px[i]
+            dflast.bbox_0_y_px[i]
+            rect = patches.Rectangle(
+                (dflast.bbox_0_x_px[i],
+                 dflast.bbox_0_y_px[i]),
+                dflast.bbox_1_x_px[i] - dflast.bbox_0_x_px[i],
+                dflast.bbox_1_y_px[i] - dflast.bbox_0_y_px[i],
+                linewidth=1, edgecolor='r', facecolor='none'
+            )
+
+            # ax = fig.axes[0]
+            # Add the patch to the Axes
+            ax.add_patch(rect)
+        self.image2.draw()
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         """
@@ -486,20 +519,32 @@ class CellTrack:
     # self.image2 = QtGui.QLabel()
     # self.image2.setPixmap(QtGui.QPixmap(logo_fn).scaled(100, 100))
     # self.image2.show()
+    def _on_param_change(self):
+        self.show_image()
 
     def show_image(self):
-        xaxis = self.parameters.param(
-            "Input", "X-Axis" ).value()
-        yaxis = self.parameters.param(
-            "Input", "Y-Axis" ).value()
-        taxis = self.parameters.param(
-            "Input", "Time Axis" ).value()
-        sl = list((np.asarray(self.imagedata.shape) / 2).astype(int))
+        if self.imagedata is None:
+            return
+        xaxis = self.parameters.param("Input", "X-Axis" ).value()
+        yaxis = self.parameters.param("Input", "Y-Axis" ).value()
+        taxis = self.parameters.param("Input", "Time Axis" ).value()
+        caxis = self.parameters.param("Input", "C-Axis" ).value()
+        cvalue= self.parameters.param("Input", "Tracked Channel" ).value()
+        tvalue= self.parameters.param("Input", "Preview Time" ).value()
+        # sl = list((np.asarray(self.imagedata.shape) / 2).astype(int)) # middle image
+        sl = list((np.asarray(self.imagedata.shape) - 1).astype(int)) # last image
         # sl = [0] * self.imagedata.ndim
         sl[int(xaxis)] = slice(None)
         sl[int(yaxis)] = slice(None)
+        sl[int(caxis)] = int(cvalue)
+        sl[int(taxis)] = int(tvalue)
 
         im = self.imagedata[tuple(sl)]
+        # self.image2.fig.clf()
+        if self._should_clear_axes:
+            self.image2.axes.cla()
+            self.image2.axes.set_axis_off()
+            self._should_clear_axes = False
         # TODO remove texts somehow
         # for txt in self.image2.fig.texts:
         #     txt.set_visible(False)
@@ -507,7 +552,7 @@ class CellTrack:
         # if len(self.image2.fig.texts) > 0:
         #     self.image2.axes.clear()
 
-        self.image2.imshow(im)
+        self.image2.imshow(im, cmap="gray")
 
 
 
@@ -531,6 +576,11 @@ class CellTrack:
             "Output", "Select Common Spreadsheet File"
         ).sigActivated.connect(self.select_output_spreadsheet_gui)
         self.parameters.param("Run").sigActivated.connect(self.run)
+        self.parameters.param("Input", "X-Axis").sigValueChanged.connect(self._on_param_change)
+        self.parameters.param("Input", "Y-Axis").sigValueChanged.connect(self._on_param_change)
+        self.parameters.param("Input", "Time Axis").sigValueChanged.connect(self._on_param_change)
+        self.parameters.param("Input", "C-Axis").sigValueChanged.connect(self._on_param_change)
+        self.parameters.param("Input", "Tracked Channel").sigValueChanged.connect(self._on_param_change)
 
         # self.parameters.param("Processing", "Open output dir").setValue(True)
         t = ParameterTree()

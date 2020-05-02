@@ -45,6 +45,8 @@ requirements:
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
     - click
     - pyqtgraph
+    - seaborn
+    - pandas
 
   run:
     - python
@@ -52,6 +54,8 @@ requirements:
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
     - click
     - pyqtgraph
+    - seaborn
+    - pandas
     # - numpy
     # - pyqt 4.11.* # [not win]
     # - pyqt 4.12.2 # [win]

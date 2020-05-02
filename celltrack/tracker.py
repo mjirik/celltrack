@@ -220,20 +220,20 @@ class Tracking:
         if self.report:
             for tr_id, tracker in enumerate(trackers.tracker_list):
                 for i, fr in enumerate(tracker.frame):
-                    tracker.bbox[i][0]
                     row = {
                         "id_obj": tr_id,
-                        "x_px": tracker.bbox[i][0],
-                        "y_px": tracker.bbox[i][0],
+                        "y_px": (tracker.bbox[i][0] + tracker.bbox[i][2])/2.,
+                        "x_px": (tracker.bbox[i][1] + tracker.bbox[i][3])/2.,
+                        "bbox_0_y_px": tracker.bbox[i][0],
+                        "bbox_0_x_px": tracker.bbox[i][1],
+                        "bbox_1_y_px": tracker.bbox[i][2],
+                        "bbox_1_x_px": tracker.bbox[i][3],
                         "t_frame": tracker.frame[i],
                         # TODO prosím doplnit jméno předka
                         "id_parent": None,
                     }
                     self.report.add_cols_to_actual_row(row)
                     self.report.finish_actual_row()
-
-
-        pass
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
     # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):

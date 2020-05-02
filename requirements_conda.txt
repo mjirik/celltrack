@@ -2,3 +2,5 @@ exsu
 io3d
 click
 pyqtgraph
+seaborn
+pandas
