@@ -31,16 +31,33 @@ CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 #               help="Create desktop icon"
 #               )
 @click.group(context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
+@click.option(
+    "--log-level",
+    "-ll",
+    # type=,
+    help="Set logging level",
+    default="INFO",
+)
 @click.pass_context
-def run(ctx, *args, **kwargs):
+def run(ctx, log_level, *args, **kwargs):
+    logger.debug("CLI run...")
+    if log_level is not None:
+        logger.debug(f"changing log level to {log_level}")
+        # try:
+        #     log_level = int(log_level)
+        # except ValueError as e:
+        #     log_level = log_level.upper()
+        # logger.remove()
+        # i = logger.add(sys.stderr, level=log_level, colorize=True)
+        # logger.debug("log level changed")
     if ctx.invoked_subcommand is None:
         # click.echo('I was invoked without subcommand')
+        logger.debug("invoke subcommand gui")
         ctx.invoke(gui, *args, **kwargs)
         # a.main()
     else:
-        pass
-        click.echo("I am about to invoke %s" % ctx.invoked_subcommand)
-    pass
+        logger.debug(f"invoke subcommand {ctx.invoked_subcommand} {args} {kwargs}")
+        # Invoked automatically
 
 
 @run.command(context_settings=CONTEXT_SETTINGS, help="Set persistent values")
@@ -100,9 +117,9 @@ def install():
         from .app_tools import create_icon
         import pathlib
 
-        logo_fn2 = pathlib.Path(__file__).parent / pathlib.Path("scaffan_icon512.ico")
+        logo_fn2 = pathlib.Path(__file__).parent / pathlib.Path("celltrack_icon512.ico")
         create_icon(
-            "MicrAnt", logo_fn2, conda_env_name="scaffan", package_name="scaffan"
+            "CellTrack", logo_fn2, conda_env_name="celltrack", package_name="celltrack"
         )
 
 
@@ -115,20 +132,10 @@ def install():
     default=None,
 )
 @click.option(
-    "--color", "-c", type=str, help="Annotation collor in hexa (#0000FF)", default=None,
-)
-@click.option(
     "--common-xlsx",
     "-o",
     type=click.Path(),
     help="Path to common xlsx file.",
-    default=None,
-)
-@click.option(
-    "--log-level",
-    "-ll",
-    # type=,
-    help="Set logging level",
     default=None,
 )
 @click.option(
@@ -141,14 +148,13 @@ def install():
     "python -m scaffan gui -p Processing,Show True",
 )
 @click.option("--print-params", "-pp", is_flag=True, help="Print parameters")
-def nogui(input_path, color, common_xlsx, log_level, params, print_params):
-    if log_level is not None:
-        i = logger.add(level=log_level)
+def nogui(input_path, common_xlsx, params, print_params):
+    print("nogui")
     logger.debug(
-        f"input path={input_path} color={color}, output_path={common_xlsx}, params={params}"
+        f"input path={input_path}, output_path={common_xlsx}, params={params}"
     )
     mainapp = celltrack_app.CellTrack()
-    logger.debug(f"Micrant created")
+    logger.debug(f"Celltrack created")
     app_tools.set_parameters_by_path(mainapp.parameters, params)
     if print_params:
         import pprint
@@ -163,9 +169,6 @@ def nogui(input_path, color, common_xlsx, log_level, params, print_params):
     if common_xlsx is not None:
         mainapp.set_common_spreadsheet_file(common_xlsx)
     # logger.debug(f"common xlsx: {mainapp.report.com}")
-    if color is not None:
-        logger.debug(f"color={color}")
-        mainapp.set_annotation_color_selection(color)
     logger.debug(f"before input file: {input_path}")
     if input_path is not None:
         logger.debug(f"Setting new input file from CLI: {input_path}")

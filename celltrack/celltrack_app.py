@@ -55,6 +55,7 @@ import pyqtgraph.widgets
 import io3d.misc
 from io3d import cachefile
 from celltrack import tracker
+logger.disable("exsu")
 
 
 class CellTrack:
@@ -233,6 +234,7 @@ class CellTrack:
         self._n_files = None
         self.imagedata:np.ndarray = None
         self._should_clear_axes = True
+        self.image2 = None
 
     def set_parameter(self, param_path, value, parse_path=True):
         """
@@ -287,7 +289,7 @@ class CellTrack:
         self.parameters.param("Input", "Data Info").setValue(msg)
 
     def run(self):
-        logger.debug(self.report.df)
+        logger.debug(f"report.df={self.report.df}")
 
         xaxis = self.parameters.param("Input", "X-Axis" ).value()
         yaxis = self.parameters.param("Input", "Y-Axis" ).value()
@@ -314,11 +316,16 @@ class CellTrack:
         # self.report.add_cols_to_actual_row({})
         trackers = self.process_image(im, resolution=resolution, time_resolution=time_resolution)
         self.trackers_to_report(trackers, resolution, time_resolution, sl.copy(), int(caxis), int(taxis))
-
+        logger.debug("trackers added to report")
+        logger.debug("draw_output...")
         self._draw_output()
+        logger.debug("dump report...")
         self._dump_report()
 
     def _draw_output(self):
+        if self.image2 is None:
+            # no gui is initialized
+            return
         dfs = self.report.df
         ax = self.image2.axes
         pal = sns.color_palette(None, len(dfs.id_obj.unique()))
@@ -354,14 +361,14 @@ class CellTrack:
         :param color_axis:
         :return:
         """
-        # TODO implementation in tracker.process_imgage
+        logger.debug("calling process_image()")
         trackers = self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution)
         return trackers
 
     def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
         if self.report:
             for tr_id, tracker in enumerate(trackers.tracker_list):
-                logger.debug(f"tracker={tr_id}, len(tracker.frame)={len(tracker.frame)}")
+                logger.trace(f"tracker={tr_id}, len(tracker.frame)={len(tracker.frame)}")
                 for fr_i, fr in enumerate(tracker.frame):
                     row = {
                         "id_obj": tr_id,
@@ -381,7 +388,7 @@ class CellTrack:
                     for c in range(self.imagedata.shape[caxis]):
                         sl[caxis] = c
                         sl[taxis] = tracker.frame[fr_i]
-                        logger.debug(f"slice={sl}")
+                        logger.trace(f"slice={sl}")
                         im = self.imagedata[tuple(sl)]
                         # region:skimage.measure.RegionProperties = tracker.region[fr_i]
                         region = tracker.region[fr_i]
@@ -470,7 +477,6 @@ class CellTrack:
 
         img = skimage.io.imread(fn)
         self.imagedata:np.ndarray = img
-
 
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(
