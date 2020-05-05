@@ -27,4 +27,4 @@ python -m celltrack
 ```
 
 # GUI
-![graphics](docs/graphics/screenshot_gui2.png)
+![graphics](docs/graphics/screenshot_gui03.png)
