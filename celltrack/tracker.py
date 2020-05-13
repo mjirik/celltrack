@@ -4,6 +4,7 @@ from exsu import Report
 import numpy as np
 import os
 from pathlib import Path
+import copy
 
 import skimage
 import numpy as np
@@ -15,7 +16,7 @@ from typing import List
 from skimage import data
 from skimage import measure
 from skimage.exposure import histogram, equalize_adapthist
-from skimage.filters import sobel
+from skimage.filters import sobel, threshold_niblack
 from skimage.segmentation import watershed
 from skimage.color import label2rgb
 from skimage.morphology import erosion, dilation, opening, closing, white_tophat
@@ -26,11 +27,13 @@ path_to_script = Path(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Tracker:
-    def __init__(self, bbox, frame, region, status):
+    def __init__(self, tid, bbox, frame, region, status):
+        self.id = tid  #tracker_id
         self.bbox = []
         self.frame = []
         self.region = []
-        self.status = status
+        self.parents = []
+        self.status = status  # 0 - inactive, #1 - active
         self.bbox.append(bbox)
         self.frame.append(frame)
         self.region.append(region)
@@ -46,10 +49,17 @@ class Tracker:
         self.frame.append(frame)
         self.region.append(region)
 
+    def add_parent(self, parent):
+        self.parents.append(parent)
+
+    def set_id(self, tid):
+        self.id = tid
+
 
 class TrackerManager:
     def __init__(self):
         self.tracker_list:List[Tracker] = []
+        self.old_tracker_list:List[Tracker] = []
         self.tracker_count = 0
         self.current_frame = -1
         self.iou_mat = []
@@ -63,7 +73,7 @@ class TrackerManager:
 
     def next_frame(self, regions_count):
         self.current_frame += 1
-        self.iou_mat.append(np.zeros((regions_count, self.tracker_count)))
+        self.iou_mat.append(np.zeros((regions_count, len(self.tracker_list))))
 
     def count(self):
         return self.tracker_count
@@ -85,6 +95,8 @@ class TrackerManager:
         # areas - the interesection area
         iou = interArea / float(boxAArea + boxBArea - interArea)
         # return the intersection over union value
+        if iou < 0.3:
+            iou = 0.0
         return iou
 
     def compute_iou(self, bbox, region_id):
@@ -97,13 +109,46 @@ class TrackerManager:
     def update_trackers(self, regions):
 
         for row_id, row in enumerate(self.iou_mat[self.current_frame]):
-            max_pos = np.argmax(row)
-            if row[max_pos] == 0:
-                # self.tracker_list[row_id].status_off()
-                self.add_tracker(Tracker(regions[row_id].bbox, self.current_frame, regions[row_id], 1))
-            else:
-                # print(len(regions), len(self.tracker_list), row_id, max_pos)
-                self.tracker_list[max_pos].new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+
+            hit = np.sum(row != 0)
+
+            if hit == 0:  # no tracker hits object - new tracker
+                self.add_tracker(Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1))
+            elif hit == 1:
+                hit_pos = np.argmax(row)
+                best_hit = row[hit_pos]
+                tracker_hits = np.sum(self.iou_mat[self.current_frame][:, hit_pos])
+                if tracker_hits == best_hit:  # only one tracker intersection - continue
+                    # print(len(regions), len(self.tracker_list), row_id, hit_pos)
+                    self.tracker_list[hit_pos].new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+                elif tracker_hits > best_hit: #more objects for one tracker - split
+                    self.tracker_list[hit_pos].status_off()
+                    splinter = copy.copy(self.tracker_list[hit_pos])
+                    splinter.new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+                    splinter.set_id(self.tracker_count)
+                    self.add_tracker(splinter)
+            elif hit > 1: # more trackers for one object - merge
+                trackers_hit = np.argwhere(row != 0)
+                parents = []
+                for id in trackers_hit:
+                    self.tracker_list[int(id)].status_off()
+                    prev_parents = self.tracker_list[int(id)].parents
+                    prev_parents.append(self.tracker_list[int(id)].id)
+                    parents.append(prev_parents)
+                merged = Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+                merged.add_parent(parents)
+                self.add_tracker(merged)
+
+        for col_id, column in enumerate(self.iou_mat[self.current_frame].T):
+            if np.sum(column) == 0:  # tracker not hit anything
+                self.tracker_list[col_id].status_off()
+
+        for tracker in self.tracker_list:
+            if tracker.status == 0:
+                self.old_tracker_list.append(tracker)
+                self.tracker_list.remove(tracker)
+
+
 
     def get_iou_mat(self):
         return self.iou_mat
@@ -160,36 +205,36 @@ class Tracking:
         model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
         pass
 
-    def find_cells(self, frame, split=0.96, disk_r=7):
+    def find_cells(self, frame, disk_r=9):
 
         if type(frame) != np.uint8:
-            cells = np.uint8((frame / np.max(frame)) * 255)
+            cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
         else:
             cells = frame
 
-        hist, hist_centers = histogram(cells)
-        sums = np.cumsum(hist / hist.max())
+        imh, imw = cells.shape
+        window = (imh // 8, imw // 8)
+        if window[0] % 2 == 0:
+            window = (window[0] + 1, window[1])
+        if window[1] % 2 == 0:
+            window = (window[0], window[1] + 1)
 
-        thr_lo = hist_centers[np.argmax(sums > (split * sum(hist / hist.max())))]
-        thr_hi = thr_lo + 1
+        binary_adaptive = threshold_niblack(cells, window_size=window, k=0)
+        binim = cells > binary_adaptive
 
-        markers = np.zeros_like(cells)
-        markers[cells < thr_lo] = 1
-        markers[cells > thr_hi] = 2
+        selem = disk(disk_r)
+
+        binim_o = opening(binim, selem)
 
         elevation_map = sobel(cells)
-        segmentation = watershed(elevation_map, markers)
+        segmentation = watershed(elevation_map, binim_o + 1)
         segmentation = ndi.binary_fill_holes(segmentation - 1)
 
         selem = disk(disk_r)
         morph = opening(segmentation, selem)
-
-        #     # Find contours at a constant value of 0.8
-        #     contours = measure.find_contours(morph, 0.8)
-
         labeled_cells, _ = ndi.label(morph)
-        # intensity image is added to provide data for further statistics computation
-        regions = measure.regionprops(labeled_cells, intensity_image=frame)
+
+        regions = measure.regionprops(labeled_cells, intensity_image=cells)
 
         return regions
 
@@ -207,7 +252,7 @@ class Tracking:
 
                 if frame_id == 0:
 
-                    manager.add_tracker(Tracker(region.bbox, frame_id, region, 1))
+                    manager.add_tracker(Tracker(manager.tracker_count, region.bbox, frame_id, region, 1))
 
                 else:
 
@@ -261,7 +306,7 @@ class Tracking:
         frames = []
         frames_c = len(image) - 1
         for idx, frame in enumerate(image):
-            regions = self.find_cells(frame[:, :])
+            regions = self.find_cells(frame[:, :], disk_r=7)
             frames.append(regions)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions)) + ' cells.')
         # #     debug first four frames
