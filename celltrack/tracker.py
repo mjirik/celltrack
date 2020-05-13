@@ -1,5 +1,6 @@
 from pyqtgraph.parametertree import Parameter
 # from . import something
+from loguru import logger
 from exsu import Report
 import numpy as np
 import os
@@ -167,6 +168,16 @@ class Tracking:
 
         # TODO Sem prosím všechny parametry.
         params = [
+            {
+                "name": "Disk Radius",
+                "type": "float",
+                "value": 0.000002,
+                "suffix": "m",
+                "siPrefix": True,
+                "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            },
+            {"name": "Frame Number", "type": "int", "value": -1,
+             "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
 
             {
                 "name": "Example Integer Param",
@@ -301,17 +312,24 @@ class Tracking:
         # examples
         # get some parameter value
         sample_weight = float(self.parameters.param("Example Float Param").value())
+
+        disk_r_mm = float(self.parameters.param("Disk Radius").value())
+        disk_r_px = int(disk_r_mm / np.mean(resolution))
+        logger.debug(f"disk_r_px={disk_r_px}")
+
+        frame_number = int(self.parameters.param("Frame Number").value())
         # self.report.
         # print(image.shape)
+        frame_number = frame_number if frame_number > 0 else len(image)
         frames = []
         frames_c = len(image) - 1
         for idx, frame in enumerate(image):
-            regions = self.find_cells(frame[:, :], disk_r=7)
+            regions = self.find_cells(frame[:, :], disk_r=disk_r_px)
             frames.append(regions)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions)) + ' cells.')
-        # #     debug first four frames
-        #     if idx > 3:
-        #         break
+        #     debug first four frames
+            if idx >= frame_number:
+                break
 
         trackers = self.cell_tracker(frames)
         # self.tracker_to_report(trackers)

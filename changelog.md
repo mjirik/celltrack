@@ -2,6 +2,7 @@
 
 ## 0.1
 
+* [added] Partial processing of dataset by maximal frame number
 * [added] preview
 * [added] cell tracking
 * [added] export to spreadsheet file

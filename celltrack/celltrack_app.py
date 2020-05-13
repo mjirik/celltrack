@@ -366,12 +366,16 @@ class CellTrack:
         return trackers
 
     def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
+
         if self.report:
-            for tr_id, tracker in enumerate(trackers.tracker_list):
+            all_tracker_list = trackers.tracker_list.copy()
+            all_tracker_list.extend(trackers.old_tracker_list)
+            # for tr_id, tracker in enumerate(trackers.tracker_list):
+            for tr_id, tracker in enumerate(all_tracker_list):
                 logger.trace(f"tracker={tr_id}, len(tracker.frame)={len(tracker.frame)}")
                 for fr_i, fr in enumerate(tracker.frame):
                     row = {
-                        "id_obj": tr_id,
+                        "id_obj": tracker.id,
                         "y_px": (tracker.bbox[fr_i][0] + tracker.bbox[fr_i][2])/2.,
                         "x_px": (tracker.bbox[fr_i][1] + tracker.bbox[fr_i][3])/2.,
                         "bbox_0_y_px": tracker.bbox[fr_i][0],
@@ -380,7 +384,7 @@ class CellTrack:
                         "bbox_1_x_px": tracker.bbox[fr_i][3],
                         "t_frame": tracker.frame[fr_i],
                         # TODO prosím doplnit jméno předka
-                        "id_parent": None,
+                        "id_parent": str(tracker.parents),
                     }
 
 
