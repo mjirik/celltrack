@@ -4,25 +4,28 @@ from loguru import logger
 from exsu import Report
 import numpy as np
 import os
-from pathlib import Path
+# from pathlib import Path
 import copy
 
-import skimage
+# from matplotlib import pyplot as plt
+# import cv2
+# import skimage
 import numpy as np
 from pathlib import Path
-import skimage.io
+# import skimage.io
 from scipy import ndimage as ndi
 from typing import List
 
-from skimage import data
+# from skimage import data
 from skimage import measure
-from skimage.exposure import histogram, equalize_adapthist
-from skimage.filters import sobel, threshold_niblack
-from skimage.segmentation import watershed
-from skimage.color import label2rgb
+# from skimage.exposure import histogram, equalize_adapthist
+from skimage.filters import sobel, threshold_niblack, gaussian
+# from skimage.segmentation import watershed
+# from skimage.color import label2rgb
 from skimage.morphology import erosion, dilation, opening, closing, white_tophat
-from skimage.morphology import black_tophat, skeletonize, convex_hull_image
+# from skimage.morphology import black_tophat, skeletonize, convex_hull_image
 from skimage.morphology import disk
+from skimage.util import random_noise, img_as_ubyte
 
 path_to_script = Path(os.path.dirname(os.path.abspath(__file__)))
 
@@ -178,6 +181,33 @@ class Tracking:
             },
             {"name": "Frame Number", "type": "int", "value": -1,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
+            {
+                "name": "Gaussian noise mean",
+                "type": "float",
+                "value": 0,
+                "tip": "Gaussian noise added to remove scanner noise.",
+            },
+
+            {
+                "name": "Gaussian noise variation",
+                "type": "float",
+                "value": 0.01,
+                "tip": "Gaussian noise added to remove scanner noise.",
+            },
+
+            {
+                "name": "Gaussian denoise sigma",
+                "type": "int",
+                "value": 1,
+                "tip": "Sigma for Gaussian denoising.",
+            },
+
+            {
+                "name": "Window size",
+                "type": "float",
+                "value": 1/8,
+                "tip": "Size of the averaging windows for adaptive thresholding.",
+            },
 
             {
                 "name": "Example Integer Param",
@@ -216,36 +246,38 @@ class Tracking:
         model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
         pass
 
-    def find_cells(self, frame, disk_r=9):
+    def find_cells(self, frame, disk_r=9, gaus_noise=(0,0.1), gaus_denoise=1, window_size=1/8):
 
         if type(frame) != np.uint8:
             cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
         else:
             cells = frame
 
+        im_noise = random_noise(cells, mean=gaus_noise[0], var=gaus_noise[1])
+        im_denoise = img_as_ubyte(gaussian(im_noise, sigma=gaus_denoise))
         imh, imw = cells.shape
-        window = (imh // 8, imw // 8)
+        window = (int(imh * window_size), int(imw * window_size))
         if window[0] % 2 == 0:
             window = (window[0] + 1, window[1])
         if window[1] % 2 == 0:
             window = (window[0], window[1] + 1)
 
-        binary_adaptive = threshold_niblack(cells, window_size=window, k=0)
+        binary_adaptive = threshold_niblack(im_denoise, window_size=window, k=0)
         binim = cells > binary_adaptive
 
-        selem = disk(disk_r)
+        selem = disk(disk_r//2)
 
         binim_o = opening(binim, selem)
 
-        elevation_map = sobel(cells)
-        segmentation = watershed(elevation_map, binim_o + 1)
-        segmentation = ndi.binary_fill_holes(segmentation - 1)
+        # elevation_map = sobel(cells)
+        # segmentation = watershed(elevation_map, binim_o + 1)
+        # segmentation = ndi.binary_fill_holes(segmentation - 1)
 
-        selem = disk(disk_r)
-        morph = opening(segmentation, selem)
-        labeled_cells, _ = ndi.label(morph)
+        # selem = disk(disk_r)
+        # morph = opening(segmentation, selem)
+        labeled_cells, _ = ndi.label(binim_o)
 
-        regions = measure.regionprops(labeled_cells, intensity_image=cells)
+        regions = measure.regionprops(labeled_cells, intensity_image=frame)
 
         return regions
 
@@ -312,7 +344,10 @@ class Tracking:
         # examples
         # get some parameter value
         sample_weight = float(self.parameters.param("Example Float Param").value())
-
+        gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
+        gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
+        gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
+        window_size = float(self.parameters.param("Window size").value())
         disk_r_mm = float(self.parameters.param("Disk Radius").value())
         disk_r_px = int(disk_r_mm / np.mean(resolution))
         logger.debug(f"disk_r_px={disk_r_px}")
@@ -324,7 +359,7 @@ class Tracking:
         frames = []
         frames_c = len(image) - 1
         for idx, frame in enumerate(image):
-            regions = self.find_cells(frame[:, :], disk_r=disk_r_px)
+            regions = self.find_cells(frame[:, :], disk_r=disk_r_px, gaus_noise=(gaussian_m, gaussian_v), gaus_denoise=gaussian_sigma, window_size=window_size)
             frames.append(regions)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions)) + ' cells.')
         #     debug first four frames
