@@ -333,11 +333,11 @@ class CellTrack:
         # rect = patches.Rectangle((50, 100), 40, 30, linewidth=1, edgecolor='r', facecolor='none')
         # Add the patch to the Axes
 
-        dflast = dfs.groupby("id_obj").last()
+        dflast = dfs.groupby("id_obj", as_index=False).last()
 
         for i in range(len(dflast)):
-            dflast.bbox_0_x_px[i]
-            dflast.bbox_0_y_px[i]
+            # dflast.bbox_0_x_px[i]
+            # dflast.bbox_0_y_px[i]
             rect = patches.Rectangle(
                 (dflast.bbox_0_x_px[i],
                  dflast.bbox_0_y_px[i]),
@@ -349,6 +349,13 @@ class CellTrack:
             # ax = fig.axes[0]
             # Add the patch to the Axes
             ax.add_patch(rect)
+            ax.text(
+                dflast.bbox_0_x_px[i],
+                dflast.bbox_0_y_px[i],
+                str(dflast.id_obj[i]),
+                color=pal[i],
+                fontsize="xx-small"
+            )
         self.image2.draw()
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):

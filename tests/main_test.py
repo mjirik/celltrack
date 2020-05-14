@@ -41,6 +41,7 @@ def test_read_tiff(path_2channel):
     logger.debug(f"file path={str(path)}")
     ct = celltrack.celltrack_app.CellTrack()
     ct.set_input_file(path)
+    ct.set_parameter("Processing;Tracking;Frame Number", 5)
     ct.start_gui(qapp=qapp, skip_exec=True)
     ct.run()
 
