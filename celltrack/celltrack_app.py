@@ -339,10 +339,10 @@ class CellTrack:
             # dflast.bbox_0_x_px[i]
             # dflast.bbox_0_y_px[i]
             rect = patches.Rectangle(
-                (dflast.bbox_0_x_px[i],
-                 dflast.bbox_0_y_px[i]),
-                dflast.bbox_1_x_px[i] - dflast.bbox_0_x_px[i],
-                dflast.bbox_1_y_px[i] - dflast.bbox_0_y_px[i],
+                (dflast.bbox_left_px[i],
+                 dflast.bbox_top_px[i]),
+                dflast.bbox_right_px[i] - dflast.bbox_left_px[i],
+                dflast.bbox_bottom_px[i] - dflast.bbox_top_px[i],
                 linewidth=1, edgecolor=pal[i], facecolor='none'
             )
 
@@ -350,11 +350,11 @@ class CellTrack:
             # Add the patch to the Axes
             ax.add_patch(rect)
             ax.text(
-                dflast.bbox_0_x_px[i],
-                dflast.bbox_0_y_px[i],
+                dflast.bbox_left_px[i],
+                dflast.bbox_top_px[i],
                 str(dflast.id_obj[i]),
                 color=pal[i],
-                fontsize="xx-small"
+                fontsize="x-small"
             )
         self.image2.draw()
 
@@ -385,10 +385,10 @@ class CellTrack:
                         "id_obj": tracker.id,
                         "y_px": (tracker.bbox[fr_i][0] + tracker.bbox[fr_i][2])/2.,
                         "x_px": (tracker.bbox[fr_i][1] + tracker.bbox[fr_i][3])/2.,
-                        "bbox_0_y_px": tracker.bbox[fr_i][0],
-                        "bbox_0_x_px": tracker.bbox[fr_i][1],
-                        "bbox_1_y_px": tracker.bbox[fr_i][2],
-                        "bbox_1_x_px": tracker.bbox[fr_i][3],
+                        "bbox_top_px": tracker.bbox[fr_i][0], # 0 y
+                        "bbox_left_px": tracker.bbox[fr_i][1], # 0 x
+                        "bbox_bottom_px": tracker.bbox[fr_i][2], # 1 y
+                        "bbox_right_px": tracker.bbox[fr_i][3], # 1 x
                         "t_frame": tracker.frame[fr_i],
                         # TODO prosím doplnit jméno předka
                         "id_parent": str(tracker.parents),
@@ -416,10 +416,10 @@ class CellTrack:
         df["x [mm]"] = df["x_px"] * resolution[0]
         df["y [mm]"] = df["y_px"] * resolution[1]
         df["t [s]"] = df["t_frame"] * time_resolution
-        df["bbox left [mm]"] = df["bbox_0_y_px"] * resolution[1]
-        df["bbox bottom [mm]"] = df["bbox_1_x_px"] * resolution[0]
-        df["bbox right [mm]"] = df["bbox_1_y_px"] * resolution[1]
-        df["bbox top [mm]"] = df["bbox_0_x_px"] * resolution[0]
+        df["bbox top [mm]"] = df["bbox_top_px"] * resolution[1]
+        df["bbox right [mm]"] = df["bbox_right_px"] * resolution[0]
+        df["bbox bottom [mm]"] = df["bbox_bottom_px"] * resolution[1]
+        df["bbox left [mm]"] = df["bbox_left_px"] * resolution[0]
 
     def select_file_gui(self):
         from PyQt5 import QtWidgets
