@@ -1,11 +1,11 @@
 package:
-  name: rootrack
+  name: celltrack
   version: "0.0.1"
 
 source:
 # this is used for build from git hub
   git_rev: 0.0.1
-  git_url: https://github.com/mjirik/rootrack.git
+  git_url: https://github.com/mjirik/celltrack.git
 
 # this is used for pypi
   # fn: io3d-1.0.30.tar.gz
@@ -65,7 +65,7 @@ requirements:
 test:
   # Python imports
   imports:
-    - rootrack
+    - celltrack
 
   # commands:
     # You can put test commands to be run here.  Use this to test that the

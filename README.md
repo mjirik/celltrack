@@ -1,4 +1,4 @@
-# rootrack
+# CellTrack
 Tracking of roots in brightfield microscope
 
 
@@ -22,7 +22,7 @@ scikit-learn
 Clone the repo
 
 ```cmd
-git clone git@github.com:mjirik/rootrack.git
+git clone git@github.com:mjirik/celltrack.git
 ```
 
 Run
