@@ -16,10 +16,7 @@ python -m celltrack
 
 The `pywin32` is used for icon installation. It can be skipped.
 
-```
-
 Clone the repo
-
 ```cmd
 git clone git@github.com:mjirik/celltrack.git
 ```
