@@ -16,7 +16,7 @@ source:
    # - fix.patch
 
 build:
-  noarch: python
+#  noarch: python
   ignore_prefix_files:
     - devel
     - examples
