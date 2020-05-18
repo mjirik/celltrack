@@ -60,8 +60,8 @@ setup(
     package_data={
         # "sample1": ["scaffan_icon256.png"],
         "": ["*.png", "*.ico"],
-        "sample2": ["celltrack/celltrack_icon512.png"],
-        "sample3": ["celltrack/celltrack_icon512.ico"],
+        # "sample2": ["celltrack/celltrack_icon512.png"],
+        # "sample3": ["celltrack/celltrack_icon512.ico"],
         "sample4": ["celltrack_icon512.png"],
         "sample5": ["celltrack_icon512.ico"],
         # "segmentation_model": ["scaffan/segmentation_model.pkl"],
