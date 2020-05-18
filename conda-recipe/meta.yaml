@@ -57,6 +57,7 @@ requirements:
     - {{ pin_compatible('pyqtgraph', max_pin='x.x') }}
     - {{ pin_compatible('io3d', max_pin='x.x') }}
     - {{ pin_compatible('scikit-image', max_pin='x.x') }}
+    - pywin32 # [win]
     - click
     # - numpy
     # - pyqt 4.11.* # [not win]
