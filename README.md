@@ -8,7 +8,7 @@ You can use [anaconda distribution](https://docs.conda.io/en/latest/miniconda.ht
 for easy installation 
 
 ```bash
-conda create -n celltrack -c mjirik -c conda-forge -c celltrack 
+conda create -n celltrack -c mjirik -c conda-forge celltrack 
 conda activate celltrack
 python -m celltrack install
 python -m celltrack
