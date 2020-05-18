@@ -209,22 +209,22 @@ class Tracking:
                 "tip": "Size of the averaging windows for adaptive thresholding.",
             },
 
-            {
-                "name": "Example Integer Param",
-                "type": "int",
-                "value": 224,
-                "suffix": "px",
-                "siPrefix": False,
-                "tip": "Value defines size of something",
-            },
-            {
-                "name": "Example Float Param",
-                "type": "float",
-                "value": 0.00006,
-                "suffix": "m",
-                "siPrefix": True,
-                "tip": "Value defines size of something",
-            },
+            # {
+            #     "name": "Example Integer Param",
+            #     "type": "int",
+            #     "value": 224,
+            #     "suffix": "px",
+            #     "siPrefix": False,
+            #     "tip": "Value defines size of something",
+            # },
+            # {
+            #     "name": "Example Float Param",
+            #     "type": "float",
+            #     "value": 0.00006,
+            #     "suffix": "m",
+            #     "siPrefix": True,
+            #     "tip": "Value defines size of something",
+            # },
         ]
         self.parameters = Parameter.create(
             name=pname,
@@ -349,7 +349,7 @@ class Tracking:
 
         # examples
         # get some parameter value
-        sample_weight = float(self.parameters.param("Example Float Param").value())
+        # sample_weight = float(self.parameters.param("Example Float Param").value())
         gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
         gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
         gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
