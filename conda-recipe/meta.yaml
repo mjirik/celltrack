@@ -38,26 +38,26 @@ build:
 
 requirements:
   build:
-    - python
+    - python 3.7
     - setuptools
     # - { pin_compatible('imma', max_pin='x.x') }
     - {{ pin_compatible('exsu', max_pin='x.x') }}
+    - {{ pin_compatible('pandas', max_pin='x.x') }}
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
+    - {{ pin_compatible('pyqtgraph', max_pin='x.x') }}
+    - {{ pin_compatible('io3d', max_pin='x.x') }}
+    - {{ pin_compatible('scikit-image', max_pin='x.x') }}
     - click
-    - pyqtgraph
-    - seaborn
-    - pandas
-    - scikit-image
 
   run:
-    - python
+    - python 3.7
     - {{ pin_compatible('exsu', max_pin='x.x') }}
+    - {{ pin_compatible('pandas', max_pin='x.x') }}
     - {{ pin_compatible('seaborn', max_pin='x.x') }}
+    - {{ pin_compatible('pyqtgraph', max_pin='x.x') }}
+    - {{ pin_compatible('io3d', max_pin='x.x') }}
+    - {{ pin_compatible('scikit-image', max_pin='x.x') }}
     - click
-    - pyqtgraph
-    - seaborn
-    - pandas
-    - scikit-image
     # - numpy
     # - pyqt 4.11.* # [not win]
     # - pyqt 4.12.2 # [win]
@@ -80,7 +80,7 @@ test:
     # - nose
 
 about:
-  home: https://github.com/mjirik/rootrack
+  home: https://github.com/mjirik/celltrack
   license: MIT
   summary: Cell tracking from microscopic data
 
