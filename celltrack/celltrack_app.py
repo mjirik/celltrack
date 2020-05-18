@@ -318,8 +318,9 @@ class CellTrack:
         logger.debug("trackers added to report")
         logger.debug("draw_output...")
         self._draw_output()
-        logger.debug("dump report...")
-        self._dump_report()
+        if not self.skip_spreadsheet_dump:
+            logger.debug("dump report...")
+            self._dump_report()
 
     def _draw_output(self):
         if self.image2 is None:
