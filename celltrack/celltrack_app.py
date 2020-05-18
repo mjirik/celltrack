@@ -8,7 +8,7 @@ from loguru import logger
 import sys
 import os.path as op
 path_to_script = op.dirname(op.abspath(__file__))
-# pth = op.join(path_to_script, "../../scaffan/")
+# pth = op.join(path_to_script, "../../celltrack/")
 # sys.path.insert(0, pth)
 import skimage.io
 import skimage.measure
@@ -67,9 +67,7 @@ class CellTrack:
 
         self.qapp = None
 
-        # import scaffan.texture as satex
         # self.glcm_textures = satex.GLCMTextureMeasurement()
-        # self.slide_segmentation = scaffan.slide_segmentation.ScanSegmentation()
         # self.slide_segmentation.report = self.report
         self.tracker = tracker.Tracking(report=self.report)
 
@@ -614,17 +612,8 @@ class CellTrack:
             self.image2.axes.cla()
             self.image2.axes.set_axis_off()
             self._should_clear_axes = False
-        # TODO remove texts somehow
-        # for txt in self.image2.fig.texts:
-        #     txt.set_visible(False)
-        # TODO Try this
-        # if len(self.image2.fig.texts) > 0:
-        #     self.image2.axes.clear()
 
         self.image2.imshow(im, cmap="gray")
-
-
-
 
     def start_gui(self, skip_exec=False, qapp=None):
 

@@ -47,6 +47,7 @@ requirements:
     - pyqtgraph
     - seaborn
     - pandas
+    - scikit-image
 
   run:
     - python
@@ -56,6 +57,7 @@ requirements:
     - pyqtgraph
     - seaborn
     - pandas
+    - scikit-image
     # - numpy
     # - pyqt 4.11.* # [not win]
     # - pyqt 4.12.2 # [win]

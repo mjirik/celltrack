@@ -38,7 +38,6 @@ def create_icon(
 
     if platform.system() == "Windows":
 
-        # logo_fn2 = pathlib.Path(__file__).parent / pathlib.Path("scaffan_icon512.ico")
 
         # logo_fn = op.join(op.dirname(__file__), icon_filename)
         logo_fn = icon_filename
@@ -50,7 +49,6 @@ def create_icon(
         pth = pth / "Desktop" / Path(f"{app_name}.lnk")
         shortcut = shell.CreateShortcut(str(pth))
         # cmd
-        # ln =  "call activate scaffan; {} -m scaffan".format(sys.executable)
         # C:\Windows\System32\cmd.exe /C "call activate anwaapp & pause &  python -m anwa & pause"
         # shortcut.TargetPath = sys.executable
         # shortcut.Arguments = f"-m {app_name}"

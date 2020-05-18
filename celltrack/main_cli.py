@@ -87,7 +87,7 @@ def set(common_spreadsheet_file=None):
     default="",
     nargs=2,
     help='Set parameter. First argument is path to parameter separated by ";". Second is the value.'
-    "python -m scaffan gui -p Processing,Show True",
+    "python -m celltrack gui -p Processing,Show True",
 )
 @click.option("--print-params", "-pp", is_flag=True, help="Print parameters")
 def gui(params, print_params):
@@ -145,7 +145,7 @@ def install():
     default="",
     nargs=2,
     help='Set parameter. First argument is path to parameter separated by ";". Second is the value.'
-    "python -m scaffan gui -p Processing,Show True",
+    "python -m celltrack gui -p Processing,Show True",
 )
 @click.option("--print-params", "-pp", is_flag=True, help="Print parameters")
 def nogui(input_path, common_xlsx, params, print_params):
