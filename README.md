@@ -14,9 +14,8 @@ python -m celltrack install
 python -m celltrack
 ```
 
-```bash
-conda install -c mjirik -c conda-forge -c bioconda scaffan python=3.6 exsu
-scikit-learn
+The `pywin32` is used for icon installation. It can be skipped.
+
 ```
 
 Clone the repo
