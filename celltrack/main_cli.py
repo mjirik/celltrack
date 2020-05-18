@@ -178,3 +178,18 @@ def nogui(input_path, common_xlsx, params, print_params):
 
 
 # def install():
+@run.command(
+    context_settings=CONTEXT_SETTINGS, help="Create an icon on Windows platform"
+)
+def install():
+    import platform
+
+    print(platform.system)
+    if platform.system() == "Windows":
+        from .app_tools import create_icon
+        import pathlib
+
+        logo_fn2 = pathlib.Path(__file__).parent / pathlib.Path("celltrack_icon512.ico")
+        create_icon(
+            "CellTrack", logo_fn2, conda_env_name="celltrack", package_name="celltrack"
+        )
