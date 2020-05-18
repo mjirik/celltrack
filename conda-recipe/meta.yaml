@@ -20,9 +20,10 @@ build:
   ignore_prefix_files:
     - devel
     - examples
-  always_include_files:
-    - celltrack/celltrack_icon512.png
-    - celltrack/celltrack_icon512.ico
+  # this is not necessary and not tested
+#  always_include_files:
+#    - celltrack/celltrack_icon512.png
+#    - celltrack/celltrack_icon512.ico
 
   # noarch_python: True
   # preserve_egg_dir: True
