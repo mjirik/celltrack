@@ -59,7 +59,7 @@ logger.disable("exsu")
 
 
 class CellTrack:
-    def __init__(self):
+    def __init__(self, skip_spreadshet_dump=False):
 
         self.report: Report = Report(check_version_of=["numpy", "scipy", "skimage"])
         self.report.set_persistent_cols({"celltrack_version": celltrack.__version__})
@@ -76,6 +76,7 @@ class CellTrack:
         # self.skeleton_analysis.set_report(self.report)
         # self.evaluation.report = self.report
         self.win: QtGui.QWidget = None
+        self.skip_spreadsheet_dump = skip_spreadshet_dump
         # self.win = None
         self.cache = cachefile.CacheFile("~/.celltrack_cache.yaml")
         # self.cache.update('', path)
@@ -388,7 +389,7 @@ class CellTrack:
                         "bbox_bottom_px": tracker.bbox[fr_i][2], # 1 y
                         "bbox_right_px": tracker.bbox[fr_i][3], # 1 x
                         "t_frame": tracker.frame[fr_i],
-                        "area_px": tracker.area,
+                        "area_px": tracker.region[fr_i].area,
                         # TODO prosím doplnit jméno předka
                         "id_parent": str(tracker.parents),
                     }

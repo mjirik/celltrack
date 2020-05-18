@@ -282,6 +282,12 @@ class Tracking:
         return regions
 
     def cell_tracker(self, frames, regions=0) -> TrackerManager:
+        """
+
+        :param frames: regionprops per frame
+        :param regions:
+        :return:
+        """
 
         manager = TrackerManager()
 
@@ -307,8 +313,8 @@ class Tracking:
 
         return manager
 
-    def tracker_to_report(self, trackers:TrackerManager):
-        pass
+    # def tracker_to_report(self, trackers:TrackerManager):
+    #     pass
         # if self.report:
         #     for tr_id, tracker in enumerate(trackers.tracker_list):
         #         for i, fr in enumerate(tracker.frame):
@@ -359,9 +365,9 @@ class Tracking:
         frames = []
         frames_c = len(image) - 1
         for idx, frame in enumerate(image):
-            regions = self.find_cells(frame[:, :], disk_r=disk_r_px, gaus_noise=(gaussian_m, gaussian_v), gaus_denoise=gaussian_sigma, window_size=window_size)
-            frames.append(regions)
-            print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions)) + ' cells.')
+            regions_props = self.find_cells(frame[:, :], disk_r=disk_r_px, gaus_noise=(gaussian_m, gaussian_v), gaus_denoise=gaussian_sigma, window_size=window_size)
+            frames.append(regions_props)
+            print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
         #     debug first four frames
             if idx >= frame_number:
                 break
