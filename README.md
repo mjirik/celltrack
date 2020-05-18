@@ -7,6 +7,12 @@ Tracking of roots in brightfield microscope
 You can use [anaconda distribution](https://docs.conda.io/en/latest/miniconda.html)
 for easy installation 
 
+```bash
+conda create -n celltrack -c mjirik -c conda-forge -c celltrack 
+conda activate celltrack
+python -m celltrack install
+python -m celltrack
+```
 
 ```bash
 conda install -c mjirik -c conda-forge -c bioconda scaffan python=3.6 exsu
