@@ -388,6 +388,7 @@ class CellTrack:
                         "bbox_bottom_px": tracker.bbox[fr_i][2], # 1 y
                         "bbox_right_px": tracker.bbox[fr_i][3], # 1 x
                         "t_frame": tracker.frame[fr_i],
+                        "area_px": tracker.area,
                         # TODO prosím doplnit jméno předka
                         "id_parent": str(tracker.parents),
                     }
@@ -418,6 +419,7 @@ class CellTrack:
         df["bbox right [mm]"] = df["bbox_right_px"] * resolution[0]
         df["bbox bottom [mm]"] = df["bbox_bottom_px"] * resolution[1]
         df["bbox left [mm]"] = df["bbox_left_px"] * resolution[0]
+        df["area [mm^2]"] = df["bbox_left_px"] * resolution[0] * resolution[1]
 
     def select_file_gui(self):
         from PyQt5 import QtWidgets
