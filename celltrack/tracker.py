@@ -379,7 +379,7 @@ class Tracking:
                 disk_r=disk_r_px,
                 gaus_noise=(gaussian_m, gaussian_v),
                 gaus_denoise=gaussian_sigma,
-                window_size=window_size
+                window_size=window_size,
                 min_size_px=min_size_px
 
             )
