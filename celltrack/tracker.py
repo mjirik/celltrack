@@ -241,6 +241,8 @@ class Tracking:
             report.save = False
             report.show = False
         self.report: Report = report
+        self.debug_image = True
+        self._thr_image = None
         pass
 
 
@@ -286,7 +288,7 @@ class Tracking:
 
         regions = measure.regionprops(labeled_cells, intensity_image=frame)
 
-        return regions
+        return regions, binim_o
 
     def cell_tracker(self, frames, regions=0) -> TrackerManager:
         """
@@ -374,8 +376,11 @@ class Tracking:
         frame_number = frame_number if frame_number > 0 else len(image)
         frames = []
         frames_c = len(image) - 1
+        # debug_images = True
+        if self.debug_image:
+            self._thr_image = np.zeros_like(image, dtype = np.uint8)
         for idx, frame in enumerate(image):
-            regions_props = self.find_cells(
+            regions_props, thr_image = self.find_cells(
                 frame[:, :],
                 disk_r=disk_r_px,
                 gaus_noise=(gaussian_m, gaussian_v),
@@ -386,6 +391,8 @@ class Tracking:
             )
             frames.append(regions_props)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
+            if self.debug_image:
+                self._thr_image[idx,:,:] = thr_image
         #     debug first four frames
             if idx >= frame_number:
                 break

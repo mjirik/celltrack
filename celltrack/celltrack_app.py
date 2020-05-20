@@ -108,11 +108,11 @@ class CellTrack:
                      "siPrefix": False,
                      },
                     {"name": "Time Axis", "type": "int", "value": 0},
-                    {"name": "X-Axis", "type": "int", "value": 3},
-                    {"name": "Y-Axis", "type": "int", "value": 2},
+                    {"name": "X-Axis", "type": "int", "value": -2},
+                    {"name": "Y-Axis", "type": "int", "value": -1},
                     # {"name": "Z-Axis", "type": "int", "value": 1},
                     {"name": "C-Axis", "type": "int", "value": 1, "tip": "Color axis"},
-                    {"name": "Tracked Channel", "type": "int", "value": -1, "tip": "Channel used for tracking"},
+                    {"name": "Tracked Channel", "type": "int", "value": 0, "tip": "Channel used for tracking"},
                     {"name": "Preview Time", "type": "int", "value": -1, "tip": "Frame number used for preview"},
 
                     # {
@@ -310,6 +310,7 @@ class CellTrack:
         sl[int(xaxis)] = slice(None)
         sl[int(yaxis)] = slice(None)
         sl[int(taxis)] = slice(None)
+        logger.debug(f"Channel={cvalue}, axis={caxis}")
 
         im = self.imagedata[tuple(sl)]
         xres = self.parameters.param("Input", "Pixel Size X").value()
@@ -498,6 +499,8 @@ class CellTrack:
 
         img = skimage.io.imread(fn)
         self.imagedata:np.ndarray = img
+        if self.imagedata.ndim < 4:
+            self.set_parameter("Input", "C-Axis", 0)
 
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(

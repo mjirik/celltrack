@@ -15,6 +15,7 @@ from pathlib import Path
 import os
 from PyQt5 import QtWidgets
 import glob
+import skimage.io
 # from datetime import datetime
 
 # from . import fixtures
@@ -36,7 +37,14 @@ def path_all_roots_data():
 
 
 
+@pytest.mark.slow
 def test_try_all(path_all_roots_data):
+    do_not_use_first_channel = [
+        "20200226-DII-30las-2GR1.tif",
+        "20200226-DII-30las-2PRE1.tif",
+        "20200311-DII-25las-GR1.tif"
+
+    ]
     path_all = path_all_roots_data
     logger.debug(path_all)
     fns = glob.glob(str(path_all / "**/*.tif"))
@@ -51,9 +59,18 @@ def test_try_all(path_all_roots_data):
         ct = celltrack.celltrack_app.CellTrack(skip_spreadshet_dump=False)
         ct.set_input_file(path)
         ct.set_parameter("Processing;Tracking;Frame Number", 5)
+        if Path(path).name in do_not_use_first_channel:
+            ct.set_parameter("Input;Tracked Channel", -1)
         ct.set_parameter("Output;Common Spreadsheet File", str(fnout))
         # ct.start_gui(qapp=qapp, skip_exec=True)
         ct.run()
+        imfnout = Path(__file__).parent/("thr_" + str(Path(path).name))
+        logger.debug(f"image out = {imfnout}")
+        logger.debug(f"im shape {ct.tracker._thr_image.shape}")
+        skimage.io.imsave(imfnout, (ct.tracker._thr_image * 128), plugin="tifffile")
+
+    # dfg = ct.report.df.group(by=["File Name","id_obj", "t_frame"])
+
 
 
 
