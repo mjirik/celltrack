@@ -19,7 +19,7 @@ from typing import List
 # from skimage import data
 from skimage import measure
 # from skimage.exposure import histogram, equalize_adapthist
-from skimage.filters import sobel, threshold_niblack, gaussian
+from skimage.filters import sobel, threshold_niblack, gaussian, threshold_otsu
 # from skimage.segmentation import watershed
 # from skimage.color import label2rgb
 from skimage.morphology import erosion, dilation, opening, closing, white_tophat
@@ -255,6 +255,8 @@ class Tracking:
 
         im_noise = random_noise(cells, mean=gaus_noise[0], var=gaus_noise[1])
         im_denoise = img_as_ubyte(gaussian(im_noise, sigma=gaus_denoise))
+        # cells=frame
+        # im_denoise = cells
         imh, imw = cells.shape
         window = (int(imh * window_size), int(imw * window_size))
         if window[0] % 2 == 0:

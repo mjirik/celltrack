@@ -198,6 +198,12 @@ class CellTrack:
                         "tip": "Control ammount of stored images. 0 - all debug imagess will be stored. "
                                "100 - just important images will be saved.",
                     },
+                    {
+                        "name": "Skip spreadsheet dump",
+                        "type": "bool",
+                        "value": skip_spreadshet_dump,
+                        "tip": "Skip saving to output spreadsheet file.",
+                    },
                 ],
             },
             # { "name": "Comparative Annotation",
@@ -318,7 +324,9 @@ class CellTrack:
         logger.debug("trackers added to report")
         logger.debug("draw_output...")
         self._draw_output()
-        if not self.skip_spreadsheet_dump:
+
+        skip_spreadsheet_dump = self.parameters.param("Processing", "Skip spreadsheet dump").value()
+        if not skip_spreadsheet_dump:
             logger.debug("dump report...")
             self._dump_report()
 
