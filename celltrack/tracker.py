@@ -181,6 +181,8 @@ class Tracking:
             },
             {"name": "Frame Number", "type": "int", "value": -1,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
+            {"name": "Min. object size", "type": "float", "value": 0.00002, "suffix":"m^2", "siPrefix":True,
+             "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
                 "name": "Gaussian noise mean",
                 "type": "float",
@@ -246,26 +248,29 @@ class Tracking:
         model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
         pass
 
-    def find_cells(self, frame, disk_r=9, gaus_noise=(0,0.1), gaus_denoise=1, window_size=1/8):
+    def find_cells(self, frame, disk_r=9, gaus_noise=(0, 0.1), gaus_denoise=1, window_size=1/8, min_size_px=64):
 
-        if type(frame) != np.uint8:
-            cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
-        else:
-            cells = frame
+        # if type(frame) != np.uint8:
+        #     cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
+        # else:
+        #     cells = frame
 
-        im_noise = random_noise(cells, mean=gaus_noise[0], var=gaus_noise[1])
-        im_denoise = img_as_ubyte(gaussian(im_noise, sigma=gaus_denoise))
-        # cells=frame
+        cells=frame
+        # im_noise = random_noise(cells, mean=gaus_noise[0], var=gaus_noise[1])
+        # im_denoise = img_as_ubyte(gaussian(im_noise, sigma=gaus_denoise))
+        # imh, imw = cells.shape
+        # window = (int(imh * window_size), int(imw * window_size))
+        # if window[0] % 2 == 0:
+        #     window = (window[0] + 1, window[1])
+        # if window[1] % 2 == 0:
+        #     window = (window[0], window[1] + 1)
+
         # im_denoise = cells
-        imh, imw = cells.shape
-        window = (int(imh * window_size), int(imw * window_size))
-        if window[0] % 2 == 0:
-            window = (window[0] + 1, window[1])
-        if window[1] % 2 == 0:
-            window = (window[0], window[1] + 1)
-
-        binary_adaptive = threshold_niblack(im_denoise, window_size=window, k=0)
+        # binary_adaptive = threshold_niblack(im_denoise, window_size=window, k=0)
+        binary_adaptive = threshold_otsu(frame)
         binim = cells > binary_adaptive
+        import skimage.morphology
+        binim = skimage.morphology.remove_small_objects(binim, min_size=min_size_px)
 
         selem = disk(disk_r//2)
 
@@ -356,8 +361,10 @@ class Tracking:
         gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
         gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
         window_size = float(self.parameters.param("Window size").value())
-        disk_r_mm = float(self.parameters.param("Disk Radius").value())
-        disk_r_px = int(disk_r_mm / np.mean(resolution))
+        disk_r_m = float(self.parameters.param("Disk Radius").value())
+        disk_r_px = int(disk_r_m / np.mean(resolution))
+        min_size_m2  = float(self.parameters.param("Min. object size").value())
+        min_size_px = int(min_size_m2 / np.prod(resolution))
         logger.debug(f"disk_r_px={disk_r_px}")
 
         frame_number = int(self.parameters.param("Frame Number").value())
@@ -367,7 +374,15 @@ class Tracking:
         frames = []
         frames_c = len(image) - 1
         for idx, frame in enumerate(image):
-            regions_props = self.find_cells(frame[:, :], disk_r=disk_r_px, gaus_noise=(gaussian_m, gaussian_v), gaus_denoise=gaussian_sigma, window_size=window_size)
+            regions_props = self.find_cells(
+                frame[:, :],
+                disk_r=disk_r_px,
+                gaus_noise=(gaussian_m, gaussian_v),
+                gaus_denoise=gaussian_sigma,
+                window_size=window_size
+                min_size_px=min_size_px
+
+            )
             frames.append(regions_props)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
         #     debug first four frames
