@@ -181,7 +181,7 @@ class Tracking:
             },
             {"name": "Frame Number", "type": "int", "value": -1,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
-            {"name": "Min. object size", "type": "float", "value": 0.00002, "suffix":"m^2", "siPrefix":True,
+            {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
                 "name": "Gaussian noise mean",
@@ -365,8 +365,9 @@ class Tracking:
         disk_r_px = int(disk_r_m / np.mean(resolution))
         min_size_m2  = float(self.parameters.param("Min. object size").value())
         min_size_px = int(min_size_m2 / np.prod(resolution))
+        logger.debug(f"pixelsize={resolution}")
         logger.debug(f"disk_r_px={disk_r_px}")
-
+        logger.debug(f"min_size_px={min_size_px}, min_size_m2={min_size_m2}")
         frame_number = int(self.parameters.param("Frame Number").value())
         # self.report.
         # print(image.shape)

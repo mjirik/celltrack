@@ -112,7 +112,7 @@ class CellTrack:
                     {"name": "Y-Axis", "type": "int", "value": 2},
                     # {"name": "Z-Axis", "type": "int", "value": 1},
                     {"name": "C-Axis", "type": "int", "value": 1, "tip": "Color axis"},
-                    {"name": "Tracked Channel", "type": "int", "value": 0, "tip": "Channel used for tracking"},
+                    {"name": "Tracked Channel", "type": "int", "value": -1, "tip": "Channel used for tracking"},
                     {"name": "Preview Time", "type": "int", "value": -1, "tip": "Frame number used for preview"},
 
                     # {
