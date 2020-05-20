@@ -183,33 +183,33 @@ class Tracking:
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
-            {
-                "name": "Gaussian noise mean",
-                "type": "float",
-                "value": 0,
-                "tip": "Gaussian noise added to remove scanner noise.",
-            },
+            # {
+            #     "name": "Gaussian noise mean",
+            #     "type": "float",
+            #     "value": 0,
+            #     "tip": "Gaussian noise added to remove scanner noise.",
+            # },
+            #
+            # {
+            #     "name": "Gaussian noise variation",
+            #     "type": "float",
+            #     "value": 0.01,
+            #     "tip": "Gaussian noise added to remove scanner noise.",
+            # },
+            #
+            # {
+            #     "name": "Gaussian denoise sigma",
+            #     "type": "int",
+            #     "value": 1,
+            #     "tip": "Sigma for Gaussian denoising.",
+            # },
 
-            {
-                "name": "Gaussian noise variation",
-                "type": "float",
-                "value": 0.01,
-                "tip": "Gaussian noise added to remove scanner noise.",
-            },
-
-            {
-                "name": "Gaussian denoise sigma",
-                "type": "int",
-                "value": 1,
-                "tip": "Sigma for Gaussian denoising.",
-            },
-
-            {
-                "name": "Window size",
-                "type": "float",
-                "value": 1/8,
-                "tip": "Size of the averaging windows for adaptive thresholding.",
-            },
+            # {
+            #     "name": "Window size",
+            #     "type": "float",
+            #     "value": 1/8,
+            #     "tip": "Size of the averaging windows for adaptive thresholding.",
+            # },
 
             # {
             #     "name": "Example Integer Param",
@@ -359,10 +359,10 @@ class Tracking:
         # examples
         # get some parameter value
         # sample_weight = float(self.parameters.param("Example Float Param").value())
-        gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
-        gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
-        gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
-        window_size = float(self.parameters.param("Window size").value())
+        # gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
+        # gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
+        # gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
+        # window_size = float(self.parameters.param("Window size").value())
         disk_r_m = float(self.parameters.param("Disk Radius").value())
         disk_r_px = int(disk_r_m / np.mean(resolution))
         min_size_m2  = float(self.parameters.param("Min. object size").value())
@@ -383,9 +383,9 @@ class Tracking:
             regions_props, thr_image = self.find_cells(
                 frame[:, :],
                 disk_r=disk_r_px,
-                gaus_noise=(gaussian_m, gaussian_v),
-                gaus_denoise=gaussian_sigma,
-                window_size=window_size,
+                # gaus_noise=(gaussian_m, gaussian_v),
+                # gaus_denoise=gaussian_sigma,
+                # window_size=window_size,
                 min_size_px=min_size_px
 
             )

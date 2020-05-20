@@ -187,6 +187,7 @@ class CellTrack:
             {
                 "name": "Processing",
                 "type": "group",
+                "expanded": False,
                 "children": [
                     # {"name": "Image Level", "type": "int", "value": 2},
                     self.tracker.parameters,
@@ -500,7 +501,7 @@ class CellTrack:
         img = skimage.io.imread(fn)
         self.imagedata:np.ndarray = img
         if self.imagedata.ndim < 4:
-            self.set_parameter("Input", "C-Axis", 0)
+            self.set_parameter("Input;C-Axis", 0)
 
     def _dump_report(self):
         common_spreadsheet_file = self.parameters.param(
