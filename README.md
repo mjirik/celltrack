@@ -4,7 +4,8 @@ Tracking of roots in brightfield microscope
 
 # Install 
 
-1. Install python distribution [conda](https://docs.conda.io/en/latest/miniconda.html)
+1. [Install Conda](https://conda.io/miniconda.html) (for Python 3, 64-bit) and  check "Add Anaconda to my PATH environment variable" 
+**during the installation**
 
 2. Use terminal to install required packages
 ```bash
@@ -15,6 +16,8 @@ python -m celltrack
 ```
 
 The `pywin32` is used for icon installation. It can be skipped.
+
+## For developpers
 
 Clone the repo
 ```cmd
