@@ -63,6 +63,7 @@ requirements:
     - {{ pin_compatible('scikit-image', max_pin='x.x') }}
     - pywin32 # [win]
     - click
+    - git # because of mistake in exsu
     # - numpy
     # - pyqt 4.11.* # [not win]
     # - pyqt 4.12.2 # [win]
