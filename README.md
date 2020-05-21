@@ -1,5 +1,5 @@
 # CellTrack
-Tracking of roots in brightfield microscope
+Tracking of roots in microscopy images.
 
 
 # Install 
