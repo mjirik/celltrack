@@ -170,15 +170,89 @@ class Tracking:
     ):
 
         # TODO Sem prosím všechny parametry.
+        gaussian_sigma_xy = 0.000001000
+        gaussian_sigma_t = 1
         params = [
+            {
+                "name": "Gaussian Sigma XY",
+                "type": "float",
+                "value": 0.00000100,
+                "suffix": "m",
+                "siPrefix": True,
+                "tip": "Filtration parameter. Should be smaller than the cell size and bigger than the noise size.",
+            },
+            {
+                "name": "Gaussian Sigma T",
+                "type": "float",
+                "value": 1.0,
+                "suffix": "s",
+                "siPrefix": True,
+                "tip": "Filtration in the dimension of time.",
+            },
+            {
+                "name": "Min. Distance",
+                "type": "float",
+                "value": 0.000006,
+                "suffix": "m",
+                "siPrefix": True,
+                "tip": "Minimal distance between cell centers.",
+            },
+            {
+                "name": "Num. Peaks",
+                "type": "int",
+                "value": 0,
+                # "suffix": "m",
+                # "siPrefix": True,
+                "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            },
+            # {
+            #     "name": "Method",
+            #     "type": "list",
+            #     "value": "Graph-Cut",
+            #     "values": ["Graph-Cut", "Threshold", "Auto Threshold"]
+            #     # "suffix": "m",
+            #     # "siPrefix": True,
+            #     # "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            # },
             {
                 "name": "Disk Radius",
                 "type": "float",
-                "value": 0.000002,
+                "value": 0.000004,
                 "suffix": "m",
                 "siPrefix": True,
-                "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+                "tip": "Radius of area for intensity evaluation. Should be comparable size as the cell radius.",
             },
+            # {
+            #     "name": "Graph-Cut Resize",
+            #     "type": "bool",
+            #     "value": True,
+            #     # "suffix": "m",
+            #     "siPrefix": False,
+            #     # "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            # },
+            # {
+            #     "name": "Graph-Cut Pixelsize",
+            #     "type": "float",
+            #     "value": 0.0000015,
+            #     "suffix": "m",
+            #     "siPrefix": True,
+            #     # "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            # },
+            # {
+            #     "name": "Graph-Cut Pairwise Alpha",
+            #     "type": "int",
+            #     "value": 20,
+            #     # "suffix": "m",
+            #     # "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            # },
+            # {
+            #     "name": "Graph-Cut Multiscale",
+            #     "type": "bool",
+            #     "value": False,
+            #     # "suffix": "m",
+            #     "siPrefix": False,
+            #     "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+            # },
             {"name": "Frame Number", "type": "int", "value": -1,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
@@ -250,7 +324,15 @@ class Tracking:
         model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
         pass
 
-    def find_cells(self, frame, disk_r=9, gaus_noise=(0, 0.1), gaus_denoise=1, window_size=1/8, min_size_px=64):
+    def find_cells2(self, frame, *args, **kwargs):
+        binim_o = frame > 0
+        labeled_cells, _ = ndi.label(binim_o)
+
+        regions = measure.regionprops(labeled_cells, intensity_image=frame)
+
+        return regions, binim_o, labeled_cells
+
+    def find_cells_per_frame(self, frame, disk_r=9, gaus_noise=(0, 0.1), gaus_denoise=1, window_size=1/8, min_size_px=64):
 
         # if type(frame) != np.uint8:
         #     cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
@@ -342,8 +424,8 @@ class Tracking:
         #             self.report.add_cols_to_actual_row(row)
         #             self.report.finish_actual_row()
 
-    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
-    # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+        # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         """
 
         :param image: [z/t c x y] takhle ty dimenze? nebo jinak?
@@ -355,40 +437,111 @@ class Tracking:
         """
         # TODO implementation
 
+        from skimage import (
+            color, feature, filters, io, measure, morphology, segmentation, util
+        )
+        # 500 nm
+        # resolution = [1, 0.000000500, 0.000000500]
+        # 5000 nm = 5 um
+        # gaussian_sigma_xy = 0.000001000
+        # gaussian_sigma_t = 1
+        gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
+        gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
+        disk_r_m = float(self.parameters.param("Disk Radius").value())
+        disk_r_px = int(disk_r_m / np.mean(resolution))
+        min_dist_m = float(self.parameters.param("Min. Distance").value())
+        min_dist_px = int(min_dist_m / np.mean(resolution))
+        logger.debug(f"disk_r_px={disk_r_px}")
+        logger.debug(f"min_dist_r_px={min_dist_px}")
+        num_peaks = int(self.parameters.param("Num. Peaks").value())
 
-        # examples
-        # get some parameter value
+
+        sigma = [gaussian_sigma_t, gaussian_sigma_xy, gaussian_sigma_xy] / np.asarray(
+            [time_resolution, resolution[0], resolution[1]])
+
+        imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
+        thr = filters.threshold_otsu(imgf)
+
+
+    # examples
+    # get some parameter value
         # sample_weight = float(self.parameters.param("Example Float Param").value())
         # gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
         # gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
         # gaussian_sigma = float(self.parameters.param("Gaussian denoise sigma").value())
         # window_size = float(self.parameters.param("Window size").value())
-        disk_r_m = float(self.parameters.param("Disk Radius").value())
-        disk_r_px = int(disk_r_m / np.mean(resolution))
-        min_size_m2  = float(self.parameters.param("Min. object size").value())
-        min_size_px = int(min_size_m2 / np.prod(resolution))
-        logger.debug(f"pixelsize={resolution}")
-        logger.debug(f"disk_r_px={disk_r_px}")
-        logger.debug(f"min_size_px={min_size_px}, min_size_m2={min_size_m2}")
         frame_number = int(self.parameters.param("Frame Number").value())
         # self.report.
         # print(image.shape)
         frame_number = frame_number if frame_number > 0 else len(image)
+        # method = "Graph-Cut"
+        #
+        # method = str(self.parameters.param("Method").value())
+        # logger.debug(f"method={method}")
+        # if method == "Graph-Cut":
+        #     seg = self.do_segmentation_with_graphcut(
+        #         image, resolution, time_resolution, qapp
+        #     )
+        # elif method == "Threshold":
+        #     seg = self.do_segmentation_with_connected_threshold(
+        #         image, resolution, time_resolution, qapp
+        #     )
+        # elif method == "Auto Threshold":
+        #     pass
+
+
+        # Gaussian filter
+
+
         frames = []
         frames_c = len(image) - 1
         # debug_images = True
         if self.debug_image:
             self._thr_image = np.zeros_like(image, dtype = np.uint8)
-        for idx, frame in enumerate(image):
-            regions_props, thr_image = self.find_cells(
-                frame[:, :],
-                disk_r=disk_r_px,
-                # gaus_noise=(gaussian_m, gaussian_v),
-                # gaus_denoise=gaussian_sigma,
-                # window_size=window_size,
-                min_size_px=min_size_px
+        # for idx, frame in enumerate(seg):
 
-            )
+        # import sed3
+        # ed = sed3.sed3(seg)
+        # ed.show()
+        import matplotlib.pyplot as plt
+
+        for idx, frame in enumerate(image):
+            # frame = image[idx,:,:]
+            imf = imgf[idx, :,: ]
+
+
+            num_peaks = np.inf if num_peaks < 1 else num_peaks
+            imthr = (imf > thr).astype(np.uint8)
+            local_maxi = feature.peak_local_max(imf, indices=False,
+                                                min_distance=min_dist_px, threshold_abs=thr,
+                                                num_peaks=num_peaks
+                                                )
+            markers = measure.label(local_maxi)
+            local_maxi_big = morphology.binary_dilation(markers, morphology.disk(disk_r_px))
+            # markers_big = measure.label(local_maxi_big)
+
+
+            regions_props, thr_image, labeled = self.find_cells2(local_maxi_big)
+            #     frame[:, :],
+            #     # disk_r=disk_r_px,
+            #     # # gaus_noise=(gaussian_m, gaussian_v),
+            #     # # gaus_denoise=gaussian_sigma,
+            #     # # window_size=window_size,
+            #     # min_size_px=min_size_px
+            #
+            # )
+            if idx == 0:
+                fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(15, 10), sharex=True, sharey=True)
+                ax = axes.ravel()
+                ax[0].imshow(frame, cmap="gray")
+                ax[1].imshow(imf, cmap="gray")
+                ax[3].imshow(markers)
+                ax[4].imshow(labeled)
+                ax[5].imshow(frame, cmap="gray")
+                ax[5].contour(labeled)
+                fig.show()
+                # plt.imshow(imf)
+                # plt.show()
             frames.append(regions_props)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
             if self.debug_image:
@@ -415,3 +568,157 @@ class Tracking:
         # "t_s": [1.0, 2.0, 2.0, 3.0],
         # return (image > 0.5).astype(np.uint8)
 
+    def do_segmentation_with_non_maximum_suppression(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+        from skimage import (
+            color, feature, filters, io, measure, morphology, segmentation, util
+        )
+        # 500 nm
+        # resolution = [1, 0.000000500, 0.000000500]
+        # 5000 nm = 5 um
+        gaussian_sigma_xy = 0.000001000
+        gaussian_sigma_t = 1
+
+        sigma = [gaussian_sigma_t, gaussian_sigma_xy, gaussian_sigma_xy] / np.asarray(
+            [time_resolution, resolution[0], resolution[1]])
+
+        imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
+
+
+
+    def do_segmentation_with_auto(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+        disk_r_m = float(self.parameters.param("Disk Radius").value())
+        disk_r_px = int(disk_r_m / np.mean(resolution))
+        min_size_m2  = float(self.parameters.param("Min. object size").value())
+        min_size_px = int(min_size_m2 / np.prod(resolution))
+        logger.debug(f"pixelsize={resolution}")
+        logger.debug(f"disk_r_px={disk_r_px}")
+        logger.debug(f"min_size_px={min_size_px}, min_size_m2={min_size_m2}")
+
+        for idx, frame in enumerate(image):
+            frame = image[idx,:,:]
+            regions_props, thr_image = self.find_cells_per_frame(
+                disk_r=disk_r_px,
+                # gaus_noise=(gaussian_m, gaussian_v),
+                # gaus_denoise=gaussian_sigma,
+                # window_size=window_size,
+                min_size_px=min_size_px
+            )
+
+    def do_segmentation_with_graphcut(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+        import imcut.pycut as pspc
+        import seededitorqt.seed_editor_qt
+        from seededitorqt.seed_editor_qt import QTSeedEditor
+        import imma.image_manipulation
+
+        gc_pxsz_mm = float(self.parameters.param("Graph-Cut Pixelsize").value()) * 1000
+        gc_pairwise_alpha = int(self.parameters.param("Graph-Cut Pairwise Alpha").value())
+        gc_resize = bool(self.parameters.param("Graph-Cut Resize").value())
+        gc_msgc = bool(self.parameters.param("Graph-Cut Multiscale").value())
+        vxsz_mm = np.array([1.0, resolution[0]*1000, resolution[1] * 1000])
+        new_vxsz_mm = np.array([1.0, gc_pxsz_mm, gc_pxsz_mm])
+        logger.debug(f"vxsz_mm={vxsz_mm}")
+        logger.debug(f"new_vxsz_mm={new_vxsz_mm}")
+        logger.debug(f"rel={vxsz_mm / new_vxsz_mm}")
+        logger.debug(f"new sz ={image.shape * vxsz_mm / new_vxsz_mm}")
+        if gc_resize:
+            im_resized = imma.image_manipulation.resize_to_mm(
+                image,
+                voxelsize_mm=vxsz_mm,
+                new_voxelsize_mm=new_vxsz_mm
+            )
+        else:
+            im_resized = image
+
+        logger.debug(f"im_resized.shape={im_resized.shape}")
+
+        segparams={
+            # 'method':'graphcut',
+
+            'method': 'multiscale_graphcut',
+            'use_boundary_penalties': False,
+            'boundary_dilatation_distance': 1,
+            'boundary_penalties_weight': 1,
+            'block_size': 8,
+            'tile_zoom_constant': 1,
+            "pairwise_alpha": gc_pairwise_alpha,
+
+        }
+        if gc_msgc:
+            segparams["method"] = 'multiscale_graphcut'
+        else:
+            segparams["method"] = 'graphcut'
+        igc = pspc.ImageGraphCut(im_resized, voxelsize=new_vxsz_mm, segparams=segparams)
+
+
+        logger.debug(f"segparams={igc.segparams}")
+        # seeds = igc.interactivity(qt_app=qapp)
+        logger.debug(f"qapp[{type(qapp)}]={qapp}")
+
+        pyed = QTSeedEditor(
+            igc.img,
+            seeds=igc.seeds,
+            modeFun=igc.interactivity_loop,
+            voxelSize=igc.voxelsize*1000,
+            volume_unit='',
+            init_brush_index=0,
+        )
+
+        pyed.voxel_label.setText(
+            f"%.2f x %.2f x %.2f [µm]"
+            % tuple(pyed.voxel_size[np.array(pyed.act_transposition)])
+        )
+        # seededitorqt.seed_editor_qt.VIEW_TABLE = {"time": (2, 1, 0), "X": (1, 0, 2), "Y": (2, 0, 1)}
+        # pyed.actual_view = "time"
+
+        logger.debug("exec_()")
+        pyed.exec_()
+        logger.debug("exec is done")
+        logger.debug(f"stats={igc.stats}")
+        logger.debug(f"GC time ={igc.stats['gc time']}")
+        logger.debug(f"segmentation[{type(igc.segmentation)}]={igc.segmentation}")
+
+        seg = imma.image_manipulation.resize_to_shape(
+            igc.segmentation,
+            shape=image.shape
+        )
+        import scipy.stats
+        seg = (1 - seg).astype(np.int8)
+        logger.debug(f"unique={np.unique(seg, return_counts=True)}")
+        return seg
+
+    def do_segmentation_with_connected_threshold(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+        from imtools import segmentation as imsegmentation
+
+
+        params = {
+            # 'threshold': threshold,
+            'inputSigma': 0.15,
+            'aoi_dilation_iterations': 0,
+            'nObj': 1,
+            'biggestObjects': False,
+            'useSeedsOfCompactObjects': True,
+            'interactivity': True,
+            'binaryClosingIterations': 2,
+            'binaryOpeningIterations': 0,
+            # 'seeds': seeds,
+        }
+        # params.update(inparams)
+        # logger.debug("ogran_label ", organ_label)
+        # target_segmentation = (self.segmentation == self.nlabels(organ_label)).astype(np.int8)
+        import imma.image_manipulation as ima
+        # target_segmentation = ima.select_labels(
+        #     self.segmentation, organ_label, self.slab
+        # )
+        vxsz_mm = np.array([1.0, resolution[0]*1000, resolution[1] * 1000])
+        outputSegmentation = imsegmentation.vesselSegmentation(
+            image,
+            voxelsize_mm=vxsz_mm,
+            # target_segmentation,
+            segmentation=np.ones(image.shape, dtype=np.uint8),
+            aoi_label=1,
+            # aoi_label=organ_label,
+            # forbidden_label=forbidden_label,
+            # slab=self.slab,
+            # debug=self.debug_mode,
+            **params
+        )

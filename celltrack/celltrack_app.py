@@ -335,6 +335,7 @@ class CellTrack:
     def _draw_output(self):
         if self.image2 is None:
             # no gui is initialized
+            logger.debug("No output draw - no image")
             return
         dfs = self.report.df
         ax = self.image2.axes
@@ -355,6 +356,7 @@ class CellTrack:
                 dflast.bbox_bottom_px[i] - dflast.bbox_top_px[i],
                 linewidth=1, edgecolor=pal[i], facecolor='none'
             )
+            # logger.debug(f"box {i} left={dflast.bbox_left_px}, top={dflast.bbox_top_px}")
 
             # ax = fig.axes[0]
             # Add the patch to the Axes
@@ -379,7 +381,7 @@ class CellTrack:
         :return:
         """
         logger.debug("calling process_image()")
-        trackers = self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution)
+        trackers = self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution, qapp=self.qapp)
         return trackers
 
     def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
