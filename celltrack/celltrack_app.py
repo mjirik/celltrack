@@ -56,6 +56,8 @@ import io3d.misc
 from io3d import cachefile
 from celltrack import tracker
 logger.disable("exsu")
+from PyQt5.QtCore import pyqtRemoveInputHook, pyqtRestoreInputHook
+pyqtRemoveInputHook()
 
 
 class CellTrack:
@@ -340,6 +342,8 @@ class CellTrack:
         if not skip_spreadsheet_dump:
             logger.debug("dump report...")
             self._dump_report()
+        else:
+            self.report.init()
 
     def _draw_output(self):
         if self.image2 is None:
@@ -348,14 +352,26 @@ class CellTrack:
             return
         dfs = self.report.df
         ax = self.image2.axes
+        for ptch in ax.patches:
+            ptch.remove()
+        for txts in ax.texts:
+            txts.remove()
         ax.patches=[]
         ax.texts=[]
         # remove all patches
         # for ptch in self.patches:
         #     ptch.remove()
+            # ptch.set_visible(False)
+        lns = ax.get_lines()
+        for ln in lns:
+            ln.remove()
 
         pal = sns.color_palette(None, len(dfs.id_obj.unique()))
-        sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
+        uu = sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
+
+        # logger.debug(f"type={type(uu)}")
+        # import pdb;
+        # pdb.set_trace()
         # rect = patches.Rectangle((50, 100), 40, 30, linewidth=1, edgecolor='r', facecolor='none')
         # Add the patch to the Axes
 
@@ -371,19 +387,20 @@ class CellTrack:
                 dflast.bbox_bottom_px[i] - dflast.bbox_top_px[i],
                 linewidth=1, edgecolor=pal[i], facecolor='none'
             )
-            # self.patches.append(rect)
+            self.patches.append(rect)
             # logger.debug(f"box {i} left={dflast.bbox_left_px}, top={dflast.bbox_top_px}")
 
             # ax = fig.axes[0]
             # Add the patch to the Axes
             ax.add_patch(rect)
-            ax.text(
+            tx = ax.text(
                 dflast.bbox_left_px[i],
                 dflast.bbox_top_px[i],
                 str(dflast.id_obj[i]),
                 color=pal[i],
                 fontsize="x-small"
             )
+            self.patches.append(tx)
         self.image2.draw()
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
