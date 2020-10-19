@@ -77,6 +77,7 @@ class CellTrack:
         # self.evaluation.report = self.report
         self.win: QtGui.QWidget = None
         self.skip_spreadsheet_dump = skip_spreadshet_dump
+        self.patches = []
         # self.win = None
         self.cache = cachefile.CacheFile("~/.celltrack_cache.yaml")
         # self.cache.update('', path)
@@ -198,6 +199,14 @@ class CellTrack:
                         "value": 50,
                         "tip": "Control ammount of stored images. 0 - all debug imagess will be stored. "
                                "100 - just important images will be saved.",
+                    },
+                    {
+                        "name": "Debug Images",
+                        "type": "bool",
+                        "value": False,
+                        # "suffix": "m",
+                        "siPrefix": False,
+                        "tip": "Show debug images",
                     },
                     {
                         "name": "Skip spreadsheet dump",
@@ -339,6 +348,12 @@ class CellTrack:
             return
         dfs = self.report.df
         ax = self.image2.axes
+        ax.patches=[]
+        ax.texts=[]
+        # remove all patches
+        # for ptch in self.patches:
+        #     ptch.remove()
+
         pal = sns.color_palette(None, len(dfs.id_obj.unique()))
         sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
         # rect = patches.Rectangle((50, 100), 40, 30, linewidth=1, edgecolor='r', facecolor='none')
@@ -356,6 +371,7 @@ class CellTrack:
                 dflast.bbox_bottom_px[i] - dflast.bbox_top_px[i],
                 linewidth=1, edgecolor=pal[i], facecolor='none'
             )
+            # self.patches.append(rect)
             # logger.debug(f"box {i} left={dflast.bbox_left_px}, top={dflast.bbox_top_px}")
 
             # ax = fig.axes[0]
@@ -381,7 +397,13 @@ class CellTrack:
         :return:
         """
         logger.debug("calling process_image()")
-        trackers = self.tracker.process_image(image=image, resolution=resolution, time_resolution=time_resolution, qapp=self.qapp)
+        debug = self.parameters.param("Processing", "Debug Images").value()
+        tvalue= self.parameters.param("Input", "Preview Time" ).value()
+        trackers = self.tracker.process_image(
+            image=image, resolution=resolution,
+            time_resolution=time_resolution, qapp=self.qapp, debug=debug,
+            preview_frame_id=tvalue
+        )
         return trackers
 
     def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):

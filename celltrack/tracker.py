@@ -184,7 +184,7 @@ class Tracking:
             {
                 "name": "Gaussian Sigma T",
                 "type": "float",
-                "value": 1.0,
+                "value": 0.5,
                 "suffix": "s",
                 "siPrefix": True,
                 "tip": "Filtration in the dimension of time.",
@@ -424,7 +424,10 @@ class Tracking:
         #             self.report.add_cols_to_actual_row(row)
         #             self.report.finish_actual_row()
 
-    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None,
+                      preview_frame_id=0,
+                      debug=False,
+                      ): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         """
 
@@ -445,6 +448,7 @@ class Tracking:
         # 5000 nm = 5 um
         # gaussian_sigma_xy = 0.000001000
         # gaussian_sigma_t = 1
+        # debug = bool(self.parameters.param("Debug images").value())
         gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
         gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
         disk_r_m = float(self.parameters.param("Disk Radius").value())
@@ -530,18 +534,24 @@ class Tracking:
             #     # min_size_px=min_size_px
             #
             # )
-            if idx == 0:
+            positive_preview_frame_id = preview_frame_id if preview_frame_id >=0 else frame_number + preview_frame_id
+            if debug & (idx == positive_preview_frame_id):
                 fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(15, 10), sharex=True, sharey=True)
                 ax = axes.ravel()
-                ax[0].imshow(frame, cmap="gray")
+                ax[0].imshow(frame, cmap="gray") #
+                ax[0].set_title("Original")
                 ax[1].imshow(imf, cmap="gray")
+                ax[1].set_title("Filtered")
                 ax[3].imshow(markers)
+                ax[3].set_title("Markers")
                 ax[4].imshow(labeled)
+                ax[4].set_title("Labeled markers")
                 ax[5].imshow(frame, cmap="gray")
                 ax[5].contour(labeled)
+                ax[5].set_title("Labeled in original")
                 fig.show()
                 # plt.imshow(imf)
-                # plt.show()
+                plt.show()
             frames.append(regions_props)
             print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
             if self.debug_image:
