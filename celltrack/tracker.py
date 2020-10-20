@@ -184,7 +184,7 @@ class Tracking:
             {
                 "name": "Gaussian Sigma T",
                 "type": "float",
-                "value": 0.5,
+                "value": 0.25,
                 "suffix": "s",
                 "siPrefix": True,
                 "tip": "Filtration in the dimension of time.",
@@ -257,6 +257,12 @@ class Tracking:
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
+            {
+                "name": "Threshold",
+                "type": "int",
+                "value": -1,
+                "tip": "Minimal intensity value for cell. Automatic threshold is selected if the value is negative.",
+            },
             # {
             #     "name": "Gaussian noise mean",
             #     "type": "float",
@@ -448,7 +454,7 @@ class Tracking:
         # 5000 nm = 5 um
         # gaussian_sigma_xy = 0.000001000
         # gaussian_sigma_t = 1
-        # debug = bool(self.parameters.param("Debug images").value())
+        thr = int(self.parameters.param("Threshold").value())
         gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
         gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
         disk_r_m = float(self.parameters.param("Disk Radius").value())
@@ -464,7 +470,9 @@ class Tracking:
             [time_resolution, resolution[0], resolution[1]])
 
         imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
-        thr = filters.threshold_otsu(imgf)
+
+        if thr < 0:
+            thr = filters.threshold_otsu(imgf)
 
 
     # examples
@@ -534,6 +542,7 @@ class Tracking:
             #     # min_size_px=min_size_px
             #
             # )
+
             positive_preview_frame_id = preview_frame_id if preview_frame_id >=0 else frame_number + preview_frame_id
             if debug & (idx == positive_preview_frame_id):
                 fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(15, 10), sharex=True, sharey=True)
@@ -553,7 +562,7 @@ class Tracking:
                 # plt.imshow(imf)
                 plt.show()
             frames.append(regions_props)
-            print('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
+            logger.info('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
             if self.debug_image:
                 self._thr_image[idx,:,:] = thr_image
         #     debug first four frames

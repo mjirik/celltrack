@@ -211,6 +211,14 @@ class CellTrack:
                         "tip": "Show debug images",
                     },
                     {
+                        "name": "Export Slices",
+                        "type": "bool",
+                        "value": False,
+                        # "suffix": "m",
+                        "siPrefix": False,
+                        "tip": "Save slices as jpg files into the directory where the spreadsheet is located.",
+                    },
+                    {
                         "name": "Skip spreadsheet dump",
                         "type": "bool",
                         "value": skip_spreadshet_dump,
@@ -421,6 +429,19 @@ class CellTrack:
             time_resolution=time_resolution, qapp=self.qapp, debug=debug,
             preview_frame_id=tvalue
         )
+        export = bool(self.parameters.param("Processing", "Export Slices").value())
+        input_path = str(self.parameters.param("Input", "File Path").value())
+        output_path = str(self.parameters.param("Output", "Common Spreadsheet File").value())
+        if export:
+            logger.debug("Export:")
+            nm = Path(input_path).stem
+            dire = Path(output_path).parent / nm
+            dire.mkdir(parents=True, exist_ok=True)
+
+            for idx, frame in enumerate(image):
+                opth = dire / f"{nm}_{idx:05d}.jpg"
+                logger.debug(opth)
+                plt.imsave(opth, frame, cmap="gray")
         return trackers
 
     def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
