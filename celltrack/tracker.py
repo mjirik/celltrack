@@ -258,10 +258,17 @@ class Tracking:
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
+                "name": "Threshold Offset",
+                "type": "bool",
+                "value": True,
+                "tip": "Use the Threshold value as offset to automatic Otsu theshold selection.",
+            },
+            {
                 "name": "Threshold",
                 "type": "int",
-                "value": -1,
-                "tip": "Minimal intensity value for cell. Automatic threshold is selected if the value is negative.",
+                "value": 0,
+                "tip": "Minimal intensity value for cell. " +\
+                       "If Threshold Offset is set, the value is relative to automatic threshold selection.",
             },
             # {
             #     "name": "Gaussian noise mean",
@@ -456,6 +463,7 @@ class Tracking:
         # 5000 nm = 5 um
         # gaussian_sigma_xy = 0.000001000
         # gaussian_sigma_t = 1
+        is_offset = int(self.parameters.param("Threshold Offset").value())
         thr = int(self.parameters.param("Threshold").value())
         gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
         gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
@@ -473,7 +481,6 @@ class Tracking:
 
         imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
 
-        do_auto_threshold = (thr < 0)
         # if thr < 0:
         #     thr = filters.threshold_otsu(imgf)
 
@@ -526,11 +533,13 @@ class Tracking:
 
 
             num_peaks = np.inf if num_peaks < 1 else num_peaks
-            if do_auto_threshold:
-                thr = filters.threshold_otsu(imf)
+            if is_offset:
+                used_thr = filters.threshold_otsu(imf) + thr
+            else:
+                used_thr = thr
             # imthr = (imf > thr).astype(np.uint8)
             local_maxi = feature.peak_local_max(imf, indices=False,
-                                                min_distance=min_dist_px, threshold_abs=thr,
+                                                min_distance=min_dist_px, threshold_abs=used_thr,
                                                 num_peaks=num_peaks
                                                 )
             markers = measure.label(local_maxi)
