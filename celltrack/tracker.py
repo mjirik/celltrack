@@ -359,6 +359,8 @@ class Tracking:
         # binary_adaptive = threshold_niblack(im_denoise, window_size=window, k=0)
         binary_adaptive = threshold_otsu(frame)
         binim = cells > binary_adaptive
+
+        # for i in range(0, frame.)
         import skimage.morphology
         binim = skimage.morphology.remove_small_objects(binim, min_size=min_size_px)
 
@@ -471,8 +473,9 @@ class Tracking:
 
         imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
 
-        if thr < 0:
-            thr = filters.threshold_otsu(imgf)
+        do_auto_threshold = (thr < 0)
+        # if thr < 0:
+        #     thr = filters.threshold_otsu(imgf)
 
 
     # examples
@@ -523,7 +526,9 @@ class Tracking:
 
 
             num_peaks = np.inf if num_peaks < 1 else num_peaks
-            imthr = (imf > thr).astype(np.uint8)
+            if do_auto_threshold:
+                thr = filters.threshold_otsu(imf)
+            # imthr = (imf > thr).astype(np.uint8)
             local_maxi = feature.peak_local_max(imf, indices=False,
                                                 min_distance=min_dist_px, threshold_abs=thr,
                                                 num_peaks=num_peaks
