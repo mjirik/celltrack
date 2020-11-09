@@ -67,6 +67,11 @@ class TrackerManager:
         self.tracker_count = 0
         self.current_frame = -1
         self.iou_mat = []
+        self.dist_mat = []
+        self.max_distance = 10
+
+    def set_max_distance(self, max_dist):
+        self.max_distance = max_dist
 
     def add_tracker(self, tracker):
         self.tracker_list.append(tracker)
@@ -78,6 +83,7 @@ class TrackerManager:
     def next_frame(self, regions_count):
         self.current_frame += 1
         self.iou_mat.append(np.zeros((regions_count, len(self.tracker_list))))
+        self.dist_mat.append(np.zeros((regions_count, len(self.tracker_list))))
 
     def count(self):
         return self.tracker_count
@@ -109,48 +115,116 @@ class TrackerManager:
             iou = self.bb_intersection_over_union(tracker.bbox[-1], bbox)
             self.iou_mat[self.current_frame][region_id][tracker_id] = iou
 
+    def compute_dist(self, centroid, region_id):
+
+        for tracker_id, tracker in enumerate(self.tracker_list):
+            dist = np.linalg.norm(np.array(tracker.region[-1].centroid) - np.array(centroid))
+            self.dist_mat[self.current_frame][region_id][tracker_id] = dist
+
+
+
+    # def update_trackers(self, regions):
+    #
+    #     for row_id, row in enumerate(self.iou_mat[self.current_frame]):
+    #
+    #         hit = np.sum(row != 0)
+    #
+    #         if hit == 0:  # no tracker hits object - new tracker
+    #             self.add_tracker(Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1))
+    #         elif hit == 1:
+    #             hit_pos = np.argmax(row)
+    #             best_hit = row[hit_pos]
+    #             tracker_hits = np.sum(self.iou_mat[self.current_frame][:, hit_pos])
+    #             if tracker_hits == best_hit:  # only one tracker intersection - continue
+    #                 # print(len(regions), len(self.tracker_list), row_id, hit_pos)
+    #                 self.tracker_list[hit_pos].new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+    #             elif tracker_hits > best_hit: #more objects for one tracker - split
+    #                 self.tracker_list[hit_pos].status_off()
+    #                 splinter = copy.copy(self.tracker_list[hit_pos])
+    #                 splinter.new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+    #                 splinter.set_id(self.tracker_count)
+    #                 self.add_tracker(splinter)
+    #         elif hit > 1: # more trackers for one object - merge
+    #             trackers_hit = np.argwhere(row != 0)
+    #             parents = []
+    #             for id in trackers_hit:
+    #                 self.tracker_list[int(id)].status_off()
+    #                 prev_parents = self.tracker_list[int(id)].parents
+    #                 prev_parents.append(self.tracker_list[int(id)].id)
+    #                 parents.append(prev_parents)
+    #             merged = Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1)
+    #             merged.add_parent(parents)
+    #             self.add_tracker(merged)
+    #
+    #     for col_id, column in enumerate(self.iou_mat[self.current_frame].T):
+    #         if np.sum(column) == 0:  # tracker not hit anything
+    #             self.tracker_list[col_id].status_off()
+    #
+    #     for tracker in self.tracker_list:
+    #         if tracker.status == 0:
+    #             self.old_tracker_list.append(tracker)
+    #             self.tracker_list.remove(tracker)
+
+    def update_trackers_iou(self, regions):
+
+        iou_mat = self.iou_mat[self.current_frame].copy()
+        current_tracker_list = self.tracker_list.copy()
+        object_list = regions.copy()
+        new_tracker_list = []
+
+        while 1:
+            if np.amax(iou_mat) > 0:
+                x, y = np.unravel_index(np.argmax(iou_mat, axis=None), iou_mat.shape)
+                iou_mat = np.delete(iou_mat, x, axis=0)
+                iou_mat = np.delete(iou_mat, y, axis=1)
+                current_tracker_list[y].new_frame(object_list[x].bbox, self.current_frame, object_list[x], 1)
+                new_tracker_list.append(current_tracker_list[y])
+                current_tracker_list.pop(y)
+                object_list.pop(x)
+            else:
+                break
+            if not(iou_mat.shape[0] * iou_mat.shape[1]):
+                break
+
+        if len(object_list) > 0:
+            for region in object_list:
+                new_tracker_list.append(
+                    Tracker(self.tracker_count, region.bbox, self.current_frame, region, 1))
+                self.tracker_count += 1
+
+        self.tracker_list = new_tracker_list.copy()
 
     def update_trackers(self, regions):
 
-        for row_id, row in enumerate(self.iou_mat[self.current_frame]):
+        comp_mat = self.dist_mat[self.current_frame].copy()
+        current_tracker_list = self.tracker_list.copy()
+        object_list = regions.copy()
+        new_tracker_list = []
 
-            hit = np.sum(row != 0)
+        while 1:
+            if np.amin(comp_mat) <= self.max_distance:
+                x, y = np.unravel_index(np.argmin(comp_mat, axis=None), comp_mat.shape)
+                comp_mat = np.delete(comp_mat, x, axis=0)
+                comp_mat = np.delete(comp_mat, y, axis=1)
+                current_tracker_list[y].new_frame(object_list[x].bbox, self.current_frame, object_list[x], 1)
+                new_tracker_list.append(current_tracker_list[y])
+                current_tracker_list.pop(y)
+                object_list.pop(x)
+            else:
+                break
+            if not(comp_mat.shape[0] * comp_mat.shape[1]):
+                break
 
-            if hit == 0:  # no tracker hits object - new tracker
-                self.add_tracker(Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1))
-            elif hit == 1:
-                hit_pos = np.argmax(row)
-                best_hit = row[hit_pos]
-                tracker_hits = np.sum(self.iou_mat[self.current_frame][:, hit_pos])
-                if tracker_hits == best_hit:  # only one tracker intersection - continue
-                    # print(len(regions), len(self.tracker_list), row_id, hit_pos)
-                    self.tracker_list[hit_pos].new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
-                elif tracker_hits > best_hit: #more objects for one tracker - split
-                    self.tracker_list[hit_pos].status_off()
-                    splinter = copy.copy(self.tracker_list[hit_pos])
-                    splinter.new_frame(regions[row_id].bbox, self.current_frame, regions[row_id], 1)
-                    splinter.set_id(self.tracker_count)
-                    self.add_tracker(splinter)
-            elif hit > 1: # more trackers for one object - merge
-                trackers_hit = np.argwhere(row != 0)
-                parents = []
-                for id in trackers_hit:
-                    self.tracker_list[int(id)].status_off()
-                    prev_parents = self.tracker_list[int(id)].parents
-                    prev_parents.append(self.tracker_list[int(id)].id)
-                    parents.append(prev_parents)
-                merged = Tracker(self.tracker_count, regions[row_id].bbox, self.current_frame, regions[row_id], 1)
-                merged.add_parent(parents)
-                self.add_tracker(merged)
+        if len(object_list) > 0:
+            for region in object_list:
+                new_tracker_list.append(
+                    Tracker(self.tracker_count, region.bbox, self.current_frame, region, 1))
+                self.tracker_count += 1
 
-        for col_id, column in enumerate(self.iou_mat[self.current_frame].T):
-            if np.sum(column) == 0:  # tracker not hit anything
-                self.tracker_list[col_id].status_off()
+        self.old_tracker_list.extend(current_tracker_list)
+        self.tracker_list = new_tracker_list
 
-        for tracker in self.tracker_list:
-            if tracker.status == 0:
-                self.old_tracker_list.append(tracker)
-                self.tracker_list.remove(tracker)
+
 
 
 
@@ -387,7 +461,7 @@ class Tracking:
 
         return regions, binim_o
 
-    def cell_tracker(self, frames, regions=0) -> TrackerManager:
+    def cell_tracker(self, frames, max_distance = 10, regions=0) -> TrackerManager:
         """
 
         :param frames: regionprops per frame
@@ -396,6 +470,7 @@ class Tracking:
         """
 
         manager = TrackerManager()
+        manager.set_max_distance(max_distance)
 
         for frame_id, frame in enumerate(frames):
 
@@ -411,7 +486,8 @@ class Tracking:
 
                 else:
 
-                    manager.compute_iou(region.bbox, region_id)
+                    # manager.compute_iou(region.bbox, region_id)
+                    manager.compute_dist(region.centroid, region_id)
 
             if frame_id > 0:
                 manager.update_trackers(frame)
@@ -583,7 +659,7 @@ class Tracking:
             if idx >= frame_number:
                 break
 
-        trackers = self.cell_tracker(frames)
+        trackers = self.cell_tracker(frames, max_distance=min_dist_px*2)
         # self.tracker_to_report(trackers)
 
         # out = {
