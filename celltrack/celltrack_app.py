@@ -389,7 +389,7 @@ class CellTrack:
             ln.remove()
 
         pal = sns.color_palette(None, len(dfs.id_obj.unique()))
-        uu = sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
+        uu = sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal, sort=False)
 
         # logger.debug(f"type={type(uu)}")
         # import pdb;
@@ -520,6 +520,8 @@ class CellTrack:
         df["bbox bottom [mm]"] = df["bbox_bottom_px"] * resolution[1]
         df["bbox left [mm]"] = df["bbox_left_px"] * resolution[0]
         df["area [mm^2]"] = df["bbox_left_px"] * resolution[0] * resolution[1]
+
+        df = df.sort_values(["id_obj", "t_frame"])
         min_frame_count = self.parameters.param("Processing", "Min. Frame Count").value()
         # Remove objects with less then min_frame_count observations.
         self.report.df = df.groupby("id_obj").filter(lambda x: len(x) > min_frame_count)
