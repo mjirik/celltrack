@@ -476,7 +476,7 @@ class Tracking:
 
             # print(frame_id, len(frame))
             manager.next_frame(len(frame))
-            print(manager.get_iou_mat()[frame_id].shape)
+            logger.debug(f"area.shape={manager.get_iou_mat()[frame_id].shape}")
 
             for region_id, region in enumerate(frame):
 
