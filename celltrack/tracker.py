@@ -332,7 +332,7 @@ class Tracking:
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
-                "name": "Threshold Offset",
+                "name": "Threshold Offset Mode",
                 "type": "bool",
                 "value": True,
                 "tip": "Use the Threshold value as offset to automatic Otsu theshold selection.",
@@ -342,7 +342,7 @@ class Tracking:
                 "type": "int",
                 "value": 0,
                 "tip": "Minimal intensity value for cell. " +\
-                       "If Threshold Offset is set, the value is relative to automatic threshold selection.",
+                       "If Threshold Offset Mode is set, the value is relative to automatic threshold selection.",
             },
             # {
             #     "name": "Gaussian noise mean",
@@ -539,7 +539,7 @@ class Tracking:
         # 5000 nm = 5 um
         # gaussian_sigma_xy = 0.000001000
         # gaussian_sigma_t = 1
-        is_offset = int(self.parameters.param("Threshold Offset").value())
+        is_offset = int(self.parameters.param("Threshold Offset Mode").value())
         thr = int(self.parameters.param("Threshold").value())
         gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
         gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
