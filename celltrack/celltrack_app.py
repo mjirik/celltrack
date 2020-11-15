@@ -203,12 +203,26 @@ class CellTrack:
                                "100 - just important images will be saved.",
                     },
                     {
+                        "name": "Min. Frame Count",
+                        "type": "int",
+                        "value": 3,
+                        "tip": "Remove all tracked objects observed in less than certain number of frames."
+                    },
+                    {
                         "name": "Debug Images",
                         "type": "bool",
                         "value": False,
                         # "suffix": "m",
                         "siPrefix": False,
                         "tip": "Show debug images",
+                    },
+                    {
+                        "name": "Show Frame Number",
+                        "type": "bool",
+                        "value": False,
+                        # "suffix": "m",
+                        "siPrefix": False,
+                        "tip": "Show last frame number in the visualization.",
                     },
                     {
                         "name": "Export Slices",
@@ -375,7 +389,7 @@ class CellTrack:
             ln.remove()
 
         pal = sns.color_palette(None, len(dfs.id_obj.unique()))
-        uu = sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal)
+        uu = sns.lineplot(data=self.report.df, x="x_px", y="y_px", hue="id_obj", legend=False, ax=ax, palette=pal, sort=False)
 
         # logger.debug(f"type={type(uu)}")
         # import pdb;
@@ -406,9 +420,20 @@ class CellTrack:
                 dflast.bbox_top_px[i],
                 str(dflast.id_obj[i]),
                 color=pal[i],
-                fontsize="x-small"
+                # fontsize="x-small"
+                fontsize = "small"
             )
             self.patches.append(tx)
+            show_frame = self.parameters.param("Processing", "Show Frame Number").value()
+            if show_frame:
+                tx2 = ax.text(
+                    dflast.bbox_left_px[i],
+                    dflast.bbox_bottom_px[i],
+                    "fr: " + str(dflast.t_frame[i]),
+                    color=pal[i],
+                    fontsize="xx-small"
+                )
+                self.patches.append(tx2)
         self.image2.draw()
 
     def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
@@ -462,6 +487,7 @@ class CellTrack:
                         "bbox_bottom_px": tracker.region[fr_i].bbox[2], # 1 y
                         "bbox_right_px": tracker.region[fr_i].bbox[3], # 1 x
                         "t_frame": tracker.frame[fr_i],
+                        # "id_frame": fr_i,
                         "area_px": tracker.region[fr_i].area,
                         # TODO prosím doplnit jméno předka
                         # "id_parent": str(tracker.parents),
@@ -494,6 +520,11 @@ class CellTrack:
         df["bbox bottom [mm]"] = df["bbox_bottom_px"] * resolution[1]
         df["bbox left [mm]"] = df["bbox_left_px"] * resolution[0]
         df["area [mm^2]"] = df["bbox_left_px"] * resolution[0] * resolution[1]
+
+        df = df.sort_values(["id_obj", "t_frame"])
+        min_frame_count = self.parameters.param("Processing", "Min. Frame Count").value()
+        # Remove objects with less then min_frame_count observations.
+        self.report.df = df.groupby("id_obj").filter(lambda x: len(x) > min_frame_count)
 
     def select_file_gui(self):
         from PyQt5 import QtWidgets
