@@ -26,17 +26,19 @@ from skimage.morphology import erosion, dilation, opening, closing, white_tophat
 # from skimage.morphology import black_tophat, skeletonize, convex_hull_image
 from skimage.morphology import disk
 from skimage.util import random_noise, img_as_ubyte
+from scipy.optimize import linear_sum_assignment
 
 path_to_script = Path(os.path.dirname(os.path.abspath(__file__)))
 
 
 class Tracker:
     def __init__(self, tid, bbox, frame, region, status):
-        self.id = tid  #tracker_id
+        self.id = tid  # tracker_id
         self.bbox = []
         self.frame = []
         self.region = []
         self.parents = []
+        self.direction = []
         self.status = status  # 0 - inactive, #1 - active
         self.bbox.append(bbox)
         self.frame.append(frame)
@@ -46,6 +48,9 @@ class Tracker:
 
     def status_off(self):
         self.status = 0
+
+    def status_dec(self):
+        self.status -= 1
 
     def new_frame(self, bbox, frame, region, status):
         self.status = status
@@ -60,10 +65,125 @@ class Tracker:
         self.id = tid
 
 
+class FeatureTracker:
+    def __init__(self, uid, frame_id, max_inactivity):
+        self.id = uid
+        self.region = []
+        self.features = []
+        self.frame = []
+        self.start_frame = frame_id
+        self.last_active_frame = frame_id
+        self.status = max_inactivity
+        self.max_time_off = max_inactivity
+
+    def add_region(self, region, frame_id, new_features=None):
+        self.region.append(region)
+        self.last_active_frame = frame_id
+        self.frame.append(frame_id)
+        # self.add_features(new_features)
+        self.status = self.max_time_off
+
+    def change_status(self, change):
+        self.status += change
+
+    def add_features(self, new_features):
+        self.features.append(new_features)
+
+
+class FeatureTrackerManager:
+    def __init__(self, region_size_limit, inactivity_time, distance_measure_method='combined'):
+        self.active_tracker_list: List[FeatureTracker] = []
+        self.inactive_tracker_list: List[FeatureTracker] = []
+        self.id_tracker = 0
+        self.id_frame = -1
+        self.max_inactivity = inactivity_time
+        self.region_limit = region_size_limit
+        self.tracker_to_obj_map = []
+        self.distance_measure_method = distance_measure_method
+
+    def add_tracker(self):
+        self.active_tracker_list.append(
+            FeatureTracker(uid=self.id_tracker, frame_id=self.id_frame, max_inactivity=self.max_inactivity))
+        self.id_tracker += 1
+
+    def clean_tracker_list(self):
+        for tracker in self.active_tracker_list:
+            if tracker.status == 0:
+                self.active_tracker_list.remove(tracker)
+                self.inactive_tracker_list.append(tracker)
+
+    def next_frame(self, new_objects):
+        self.id_frame += 1
+        self.tracker_to_obj_map.append(self.create_distance_matrix(new_objects))
+        self.update_trackers(new_objects, distance_type=self.distance_measure_method)
+        self.clean_tracker_list()
+
+    def create_distance_matrix(self, new_objects):
+
+        dist_mat = np.zeros((len(new_objects), len(self.active_tracker_list)))
+        for obj_id, obj in enumerate(new_objects):
+            for tracker_id, tracker in enumerate(self.active_tracker_list):
+                dist_mat[obj_id][tracker_id] = self.dist_calc(obj, tracker, self.distance_measure_method)
+
+        return dist_mat
+
+    def dist_calc(self, obj, tracker, distance_type='distance'):
+
+        if distance_type == 'distance':
+            return np.linalg.norm(np.array(obj.centroid) - np.array(tracker.region[-1].centroid))
+        elif distance_type == 'features':
+            return np.linalg.norm(np.array(obj.intensity_image.flatten())
+                                  - np.array(tracker.region[-1].intensity_image.flatten()))
+        elif distance_type == 'combined':
+            f_dist = np.linalg.norm(np.array(obj.intensity_image.flatten())
+                                    - np.array(tracker.region[-1].intensity_image.flatten()))
+            dist = np.linalg.norm(np.array(obj.centroid) - np.array(tracker.region[-1].centroid))
+            dist = dist if dist <= self.region_limit else 12000
+            return dist * f_dist
+
+        else:
+            return np.inf
+
+    def update_trackers(self, new_objects, method='hungarian', distance_type='distance'):
+        # if distance_type == 'distance':
+        #     threshold = self.region_limit
+        # elif distance_type == 'features':
+        #     threshold = self.region_limit
+        # elif distance_type == 'combined':
+        #     threshold = self.region_limit
+        threshold = self.region_limit
+        if method == 'hungarian':
+            row, col = linear_sum_assignment(self.tracker_to_obj_map[-1])
+            if len(row > 0):
+                for i in range(0, len(row)):
+                    object_id = row[i]
+                    tracker_id = col[i]
+                    distance = self.tracker_to_obj_map[-1][object_id, tracker_id]
+
+                    if distance <= (threshold * (
+                            (new_objects[object_id].max_intensity
+                             - new_objects[object_id].min_intensity))):
+                        self.active_tracker_list[tracker_id].add_region(new_objects[object_id], self.id_frame)
+                    else:
+                        self.active_tracker_list[tracker_id].change_status(-1)
+                        self.add_tracker()
+                        self.active_tracker_list[-1].add_region(new_objects[object_id], self.id_frame)
+                tracker_unused = list(range(0, len(self.active_tracker_list)))
+                for tracker_id in col:
+                    tracker_unused.remove(tracker_id)
+                for tracker_id in tracker_unused:
+                    self.active_tracker_list[tracker_id].change_status(-1)
+
+            else:
+                for i in range(0, len(new_objects)):
+                    self.add_tracker()
+                    self.active_tracker_list[-1].add_region(new_objects[i], self.id_frame)
+
+
 class TrackerManager:
     def __init__(self):
-        self.tracker_list:List[Tracker] = []
-        self.old_tracker_list:List[Tracker] = []
+        self.tracker_list: List[Tracker] = []
+        self.old_tracker_list: List[Tracker] = []
         self.tracker_count = 0
         self.current_frame = -1
         self.iou_mat = []
@@ -115,13 +235,18 @@ class TrackerManager:
             iou = self.bb_intersection_over_union(tracker.bbox[-1], bbox)
             self.iou_mat[self.current_frame][region_id][tracker_id] = iou
 
-    def compute_dist(self, centroid, region_id):
-
+    def compute_dist(self, centroid, region_id, move_dist):
+        move_sign = np.sign(np.array(move_dist))
         for tracker_id, tracker in enumerate(self.tracker_list):
-            dist = np.linalg.norm(np.array(tracker.region[-1].centroid) - np.array(centroid))
+            dist = np.array(centroid) - np.array(tracker.region[-1].centroid)
+            dist_move_sign = np.sign(dist)
+            if tracker.direction:
+                move_sign = np.sign(np.array(tracker.direction[-1]))
+            if np.all(move_sign == dist_move_sign):
+                dist = np.linalg.norm(dist)
+            else:
+                dist = 12000
             self.dist_mat[self.current_frame][region_id][tracker_id] = dist
-
-
 
     # def update_trackers(self, regions):
     #
@@ -183,7 +308,7 @@ class TrackerManager:
                 object_list.pop(x)
             else:
                 break
-            if not(iou_mat.shape[0] * iou_mat.shape[1]):
+            if not (iou_mat.shape[0] * iou_mat.shape[1]):
                 break
 
         if len(object_list) > 0:
@@ -200,19 +325,24 @@ class TrackerManager:
         current_tracker_list = self.tracker_list.copy()
         object_list = regions.copy()
         new_tracker_list = []
+        from scipy.optimize import linear_sum_assignment
+        row, col = linear_sum_assignment(comp_mat)
 
+        dist_norm = 7 * np.linalg.norm(np.array(self.max_distance))
         while 1:
-            if np.amin(comp_mat) <= self.max_distance:
+            if np.amin(comp_mat) <= dist_norm:
                 x, y = np.unravel_index(np.argmin(comp_mat, axis=None), comp_mat.shape)
                 comp_mat = np.delete(comp_mat, x, axis=0)
                 comp_mat = np.delete(comp_mat, y, axis=1)
                 current_tracker_list[y].new_frame(object_list[x].bbox, self.current_frame, object_list[x], 1)
+                # current_tracker_list[y].direction.append(np.array(object_list[x].centroid)
+                #                                          - np.array(current_tracker_list[y].region[-2].centroid))
                 new_tracker_list.append(current_tracker_list[y])
                 current_tracker_list.pop(y)
                 object_list.pop(x)
             else:
                 break
-            if not(comp_mat.shape[0] * comp_mat.shape[1]):
+            if not (comp_mat.shape[0] * comp_mat.shape[1]):
                 break
 
         if len(object_list) > 0:
@@ -221,12 +351,15 @@ class TrackerManager:
                     Tracker(self.tracker_count, region.bbox, self.current_frame, region, 1))
                 self.tracker_count += 1
 
-        self.old_tracker_list.extend(current_tracker_list)
+        if len(current_tracker_list) > 0:
+            for tracker in current_tracker_list:
+                tracker.status_dec()
+                if tracker.status > -3:
+                    new_tracker_list.append(tracker)
+                    current_tracker_list.remove(tracker)
+
+        # self.old_tracker_list.extend(current_tracker_list)
         self.tracker_list = new_tracker_list
-
-
-
-
 
     def get_iou_mat(self):
         return self.iou_mat
@@ -236,10 +369,10 @@ class Tracking:
     def __init__(
             self,
             report: Report = None,
-            pname = "Tracking",
-            ptype = "group",
-            pvalue = None,
-            ptip = "Tracking parameters",
+            pname="Tracking",
+            ptype="group",
+            pvalue=None,
+            ptip="Tracking parameters",
 
     ):
 
@@ -329,7 +462,7 @@ class Tracking:
             # },
             {"name": "Frame Number", "type": "int", "value": -1,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
-            {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix":"m^2", "siPrefix":True,
+            {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix": "m^2", "siPrefix": True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
                 "name": "Threshold Offset",
@@ -341,7 +474,7 @@ class Tracking:
                 "name": "Threshold",
                 "type": "int",
                 "value": 0,
-                "tip": "Minimal intensity value for cell. " +\
+                "tip": "Minimal intensity value for cell. " + \
                        "If Threshold Offset is set, the value is relative to automatic threshold selection.",
             },
             # {
@@ -406,9 +539,8 @@ class Tracking:
         self._thr_image = None
         pass
 
-
     def init(self):
-        model_path = path_to_script / 'models/my_best_model.model' #cesta k ulozenym modelum
+        model_path = path_to_script / 'models/my_best_model.model'  # cesta k ulozenym modelum
         pass
 
     def find_cells2(self, frame, *args, **kwargs):
@@ -419,14 +551,15 @@ class Tracking:
 
         return regions, binim_o, labeled_cells
 
-    def find_cells_per_frame(self, frame, disk_r=9, gaus_noise=(0, 0.1), gaus_denoise=1, window_size=1/8, min_size_px=64):
+    def find_cells_per_frame(self, frame, disk_r=9, gaus_noise=(0, 0.1), gaus_denoise=1, window_size=1 / 8,
+                             min_size_px=64):
 
         # if type(frame) != np.uint8:
         #     cells = ((frame / np.max(frame)) * 255).astype(np.uint8)
         # else:
         #     cells = frame
 
-        cells=frame
+        cells = frame
         # im_noise = random_noise(cells, mean=gaus_noise[0], var=gaus_noise[1])
         # im_denoise = img_as_ubyte(gaussian(im_noise, sigma=gaus_denoise))
         # imh, imw = cells.shape
@@ -445,7 +578,7 @@ class Tracking:
         import skimage.morphology
         binim = skimage.morphology.remove_small_objects(binim, min_size=min_size_px)
 
-        selem = disk(disk_r//2)
+        selem = disk(disk_r // 2)
 
         binim_o = opening(binim, selem)
 
@@ -461,7 +594,34 @@ class Tracking:
 
         return regions, binim_o
 
-    def cell_tracker(self, frames, max_distance = 10, regions=0) -> TrackerManager:
+    def direction_mapping(self, regions):
+
+        frame_centroids = []
+        for frame in regions:
+            centroids = []
+            for obj in frame:
+                centroids.append(np.array(obj.centroid))
+            centroids = np.array(centroids)
+            frame_centroids.append(np.mean(centroids, axis=0))
+
+        from scipy.stats import linregress
+
+        x = np.array(frame_centroids)[:, 1]
+        y = np.array(frame_centroids)[:, 0]
+        slope, intercept, r_value, p_value, std_err = linregress(x, y)
+        y_reg = intercept + slope * x
+        mean_move_y = np.mean(y[1:] - y[0:-1])
+        mean_move_x = np.mean(x[1:] - x[0:-1])
+        # from matplotlib import pyplot as plt
+        # plt.imshow(np.zeros((1200, 1200)))
+        # plt.plot(x, y, 'o', label='original data')
+        # plt.plot(x, intercept + slope * x, 'r', label='fitted line')
+        # plt.legend()
+        # plt.show()
+
+        return frame_centroids, intercept, slope, mean_move_y, mean_move_x
+
+    def cell_tracker(self, frames, max_distance=10, regions=0) -> TrackerManager:
         """
 
         :param frames: regionprops per frame
@@ -469,56 +629,57 @@ class Tracking:
         :return:
         """
 
-        manager = TrackerManager()
-        manager.set_max_distance(max_distance)
+        # manager = TrackerManager()
+        manager = FeatureTrackerManager(region_size_limit=max_distance, inactivity_time=2)
+        # manager.set_max_distance(max_distance)
 
         for frame_id, frame in enumerate(frames):
-
             # print(frame_id, len(frame))
-            manager.next_frame(len(frame))
-            print(manager.get_iou_mat()[frame_id].shape)
+            # manager.next_frame(len(frame))
 
-            for region_id, region in enumerate(frame):
+            manager.next_frame(frame)
+            print(manager.tracker_to_obj_map[frame_id].shape)
 
-                if frame_id == 0:
-
-                    manager.add_tracker(Tracker(manager.tracker_count, region.bbox, frame_id, region, 1))
-
-                else:
-
-                    # manager.compute_iou(region.bbox, region_id)
-                    manager.compute_dist(region.centroid, region_id)
-
-            if frame_id > 0:
-                manager.update_trackers(frame)
-
+            # for region_id, region in enumerate(frame):
+            #
+            #     if frame_id == 0:
+            #
+            #         manager.add_tracker(Tracker(manager.tracker_count, region.bbox, frame_id, region, 1))
+            #
+            #     else:
+            #
+            #         # manager.compute_iou(region.bbox, region_id)
+            #         manager.compute_dist(region.centroid, region_id, max_distance)
+            #
+            # if frame_id > 0:
+            #     manager.update_trackers(frame)
 
         return manager
 
     # def tracker_to_report(self, trackers:TrackerManager):
     #     pass
-        # if self.report:
-        #     for tr_id, tracker in enumerate(trackers.tracker_list):
-        #         for i, fr in enumerate(tracker.frame):
-        #             row = {
-        #                 "id_obj": tr_id,
-        #                 "y_px": (tracker.bbox[i][0] + tracker.bbox[i][2])/2.,
-        #                 "x_px": (tracker.bbox[i][1] + tracker.bbox[i][3])/2.,
-        #                 "bbox_0_y_px": tracker.bbox[i][0],
-        #                 "bbox_0_x_px": tracker.bbox[i][1],
-        #                 "bbox_1_y_px": tracker.bbox[i][2],
-        #                 "bbox_1_x_px": tracker.bbox[i][3],
-        #                 "t_frame": tracker.frame[i],
-        #                 # TODO prosím doplnit jméno předka
-        #                 "id_parent": None,
-        #             }
-        #             self.report.add_cols_to_actual_row(row)
-        #             self.report.finish_actual_row()
+    # if self.report:
+    #     for tr_id, tracker in enumerate(trackers.tracker_list):
+    #         for i, fr in enumerate(tracker.frame):
+    #             row = {
+    #                 "id_obj": tr_id,
+    #                 "y_px": (tracker.bbox[i][0] + tracker.bbox[i][2])/2.,
+    #                 "x_px": (tracker.bbox[i][1] + tracker.bbox[i][3])/2.,
+    #                 "bbox_0_y_px": tracker.bbox[i][0],
+    #                 "bbox_0_x_px": tracker.bbox[i][1],
+    #                 "bbox_1_y_px": tracker.bbox[i][2],
+    #                 "bbox_1_x_px": tracker.bbox[i][3],
+    #                 "t_frame": tracker.frame[i],
+    #                 # TODO prosím doplnit jméno předka
+    #                 "id_parent": None,
+    #             }
+    #             self.report.add_cols_to_actual_row(row)
+    #             self.report.finish_actual_row()
 
-    def process_image(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None,
+    def process_image(self, image: np.ndarray, resolution: np.ndarray, time_resolution: float, qapp=None,
                       preview_frame_id=0,
                       debug=False,
-                      ): #, time_axis:int=None, z_axis:int=None, color_axis:int=None):
+                      ):  # , time_axis:int=None, z_axis:int=None, color_axis:int=None):
         # def process_image(self, image:np.ndarray, resolution:np.ndarray, time_axis:int=None, z_axis:int=None, color_axis:int=None):
         """
 
@@ -551,7 +712,6 @@ class Tracking:
         logger.debug(f"min_dist_r_px={min_dist_px}")
         num_peaks = int(self.parameters.param("Num. Peaks").value())
 
-
         sigma = [gaussian_sigma_t, gaussian_sigma_xy, gaussian_sigma_xy] / np.asarray(
             [time_resolution, resolution[0], resolution[1]])
 
@@ -560,9 +720,8 @@ class Tracking:
         # if thr < 0:
         #     thr = filters.threshold_otsu(imgf)
 
-
-    # examples
-    # get some parameter value
+        # examples
+        # get some parameter value
         # sample_weight = float(self.parameters.param("Example Float Param").value())
         # gaussian_m = float(self.parameters.param("Gaussian noise mean").value())
         # gaussian_v = float(self.parameters.param("Gaussian noise variation").value())
@@ -587,15 +746,13 @@ class Tracking:
         # elif method == "Auto Threshold":
         #     pass
 
-
         # Gaussian filter
-
 
         frames = []
         frames_c = len(image) - 1
         # debug_images = True
         if self.debug_image:
-            self._thr_image = np.zeros_like(image, dtype = np.uint8)
+            self._thr_image = np.zeros_like(image, dtype=np.uint8)
         # for idx, frame in enumerate(seg):
 
         # import sed3
@@ -605,8 +762,7 @@ class Tracking:
 
         for idx, frame in enumerate(image):
             # frame = image[idx,:,:]
-            imf = imgf[idx, :,: ]
-
+            imf = imgf[idx, :, :]
 
             num_peaks = np.inf if num_peaks < 1 else num_peaks
             if is_offset:
@@ -619,11 +775,10 @@ class Tracking:
                                                 num_peaks=num_peaks
                                                 )
             markers = measure.label(local_maxi)
-            local_maxi_big = morphology.binary_dilation(markers, morphology.disk(disk_r_px))
+            local_maxi_big = morphology.binary_dilation(markers, morphology.disk(min_dist_px // 2 - 1))
             # markers_big = measure.label(local_maxi_big)
 
-
-            regions_props, thr_image, labeled = self.find_cells2(local_maxi_big)
+            regions_props, thr_image, labeled = self.find_cells2(local_maxi_big * imf)
             #     frame[:, :],
             #     # disk_r=disk_r_px,
             #     # # gaus_noise=(gaussian_m, gaussian_v),
@@ -633,11 +788,11 @@ class Tracking:
             #
             # )
 
-            positive_preview_frame_id = preview_frame_id if preview_frame_id >=0 else frame_number + preview_frame_id
+            positive_preview_frame_id = preview_frame_id if preview_frame_id >= 0 else frame_number + preview_frame_id
             if debug & (idx == positive_preview_frame_id):
                 fig, axes = plt.subplots(ncols=3, nrows=2, figsize=(15, 10), sharex=True, sharey=True)
                 ax = axes.ravel()
-                ax[0].imshow(frame, cmap="gray") #
+                ax[0].imshow(frame, cmap="gray")  #
                 ax[0].set_title("Original")
                 ax[1].imshow(imf, cmap="gray")
                 ax[1].set_title("Filtered")
@@ -652,14 +807,18 @@ class Tracking:
                 # plt.imshow(imf)
                 plt.show()
             frames.append(regions_props)
-            logger.info('Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
+            logger.info(
+                'Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
             if self.debug_image:
-                self._thr_image[idx,:,:] = thr_image
-        #     debug first four frames
+                self._thr_image[idx, :, :] = thr_image
+            #     debug first four frames
             if idx >= frame_number:
                 break
 
-        trackers = self.cell_tracker(frames, max_distance=min_dist_px*2)
+        # direction of movement by linear regression of detected object centroid in each frame
+        centroids, intercept, slope, mean_move_y, mean_move_x = self.direction_mapping(frames)
+
+        trackers = self.cell_tracker(frames, max_distance=min_dist_px + np.linalg.norm([mean_move_y, mean_move_x]))
         # self.tracker_to_report(trackers)
 
         # out = {
@@ -671,13 +830,13 @@ class Tracking:
         # }
         return trackers
 
-
         # "x_mm": [0.1, 0.1, 0.100, 0.1],
         # "y_mm": [0.1, 0.1, 0.105, 0.1],
         # "t_s": [1.0, 2.0, 2.0, 3.0],
         # return (image > 0.5).astype(np.uint8)
 
-    def do_segmentation_with_non_maximum_suppression(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+    def do_segmentation_with_non_maximum_suppression(self, image: np.ndarray, resolution: np.ndarray,
+                                                     time_resolution: float, qapp=None):
         from skimage import (
             color, feature, filters, io, measure, morphology, segmentation, util
         )
@@ -692,19 +851,17 @@ class Tracking:
 
         imgf = filters.gaussian(image, sigma=sigma, preserve_range=True)
 
-
-
-    def do_segmentation_with_auto(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+    def do_segmentation_with_auto(self, image: np.ndarray, resolution: np.ndarray, time_resolution: float, qapp=None):
         disk_r_m = float(self.parameters.param("Disk Radius").value())
         disk_r_px = int(disk_r_m / np.mean(resolution))
-        min_size_m2  = float(self.parameters.param("Min. object size").value())
+        min_size_m2 = float(self.parameters.param("Min. object size").value())
         min_size_px = int(min_size_m2 / np.prod(resolution))
         logger.debug(f"pixelsize={resolution}")
         logger.debug(f"disk_r_px={disk_r_px}")
         logger.debug(f"min_size_px={min_size_px}, min_size_m2={min_size_m2}")
 
         for idx, frame in enumerate(image):
-            frame = image[idx,:,:]
+            frame = image[idx, :, :]
             regions_props, thr_image = self.find_cells_per_frame(
                 disk_r=disk_r_px,
                 # gaus_noise=(gaussian_m, gaussian_v),
@@ -713,7 +870,8 @@ class Tracking:
                 min_size_px=min_size_px
             )
 
-    def do_segmentation_with_graphcut(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+    def do_segmentation_with_graphcut(self, image: np.ndarray, resolution: np.ndarray, time_resolution: float,
+                                      qapp=None):
         import imcut.pycut as pspc
         import seededitorqt.seed_editor_qt
         from seededitorqt.seed_editor_qt import QTSeedEditor
@@ -723,7 +881,7 @@ class Tracking:
         gc_pairwise_alpha = int(self.parameters.param("Graph-Cut Pairwise Alpha").value())
         gc_resize = bool(self.parameters.param("Graph-Cut Resize").value())
         gc_msgc = bool(self.parameters.param("Graph-Cut Multiscale").value())
-        vxsz_mm = np.array([1.0, resolution[0]*1000, resolution[1] * 1000])
+        vxsz_mm = np.array([1.0, resolution[0] * 1000, resolution[1] * 1000])
         new_vxsz_mm = np.array([1.0, gc_pxsz_mm, gc_pxsz_mm])
         logger.debug(f"vxsz_mm={vxsz_mm}")
         logger.debug(f"new_vxsz_mm={new_vxsz_mm}")
@@ -740,7 +898,7 @@ class Tracking:
 
         logger.debug(f"im_resized.shape={im_resized.shape}")
 
-        segparams={
+        segparams = {
             # 'method':'graphcut',
 
             'method': 'multiscale_graphcut',
@@ -758,7 +916,6 @@ class Tracking:
             segparams["method"] = 'graphcut'
         igc = pspc.ImageGraphCut(im_resized, voxelsize=new_vxsz_mm, segparams=segparams)
 
-
         logger.debug(f"segparams={igc.segparams}")
         # seeds = igc.interactivity(qt_app=qapp)
         logger.debug(f"qapp[{type(qapp)}]={qapp}")
@@ -767,7 +924,7 @@ class Tracking:
             igc.img,
             seeds=igc.seeds,
             modeFun=igc.interactivity_loop,
-            voxelSize=igc.voxelsize*1000,
+            voxelSize=igc.voxelsize * 1000,
             volume_unit='',
             init_brush_index=0,
         )
@@ -795,9 +952,9 @@ class Tracking:
         logger.debug(f"unique={np.unique(seg, return_counts=True)}")
         return seg
 
-    def do_segmentation_with_connected_threshold(self, image:np.ndarray, resolution:np.ndarray, time_resolution:float, qapp=None):
+    def do_segmentation_with_connected_threshold(self, image: np.ndarray, resolution: np.ndarray,
+                                                 time_resolution: float, qapp=None):
         from imtools import segmentation as imsegmentation
-
 
         params = {
             # 'threshold': threshold,
@@ -818,7 +975,7 @@ class Tracking:
         # target_segmentation = ima.select_labels(
         #     self.segmentation, organ_label, self.slab
         # )
-        vxsz_mm = np.array([1.0, resolution[0]*1000, resolution[1] * 1000])
+        vxsz_mm = np.array([1.0, resolution[0] * 1000, resolution[1] * 1000])
         outputSegmentation = imsegmentation.vesselSegmentation(
             image,
             voxelsize_mm=vxsz_mm,

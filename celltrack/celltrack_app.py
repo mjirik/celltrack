@@ -14,7 +14,7 @@ import skimage.io
 import skimage.measure
 import seaborn as sns
 from matplotlib import patches
-from .tracker import TrackerManager, Tracker
+from .tracker import FeatureTrackerManager, FeatureTracker
 
 from PyQt5 import QtGui
 
@@ -444,27 +444,27 @@ class CellTrack:
                 plt.imsave(opth, frame, cmap="gray")
         return trackers
 
-    def trackers_to_report(self, trackers:TrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
+    def trackers_to_report(self, trackers:FeatureTrackerManager,resolution:np.ndarray, time_resolution:float, sl:List[slice], caxis:int, taxis:int):
 
         if self.report:
-            all_tracker_list = trackers.tracker_list.copy()
-            all_tracker_list.extend(trackers.old_tracker_list)
+            all_tracker_list = trackers.active_tracker_list.copy()
+            all_tracker_list.extend(trackers.inactive_tracker_list)
             # for tr_id, tracker in enumerate(trackers.tracker_list):
             for tr_id, tracker in enumerate(all_tracker_list):
-                logger.trace(f"tracker={tr_id}, len(tracker.frame)={len(tracker.frame)}")
-                for fr_i, fr in enumerate(tracker.frame):
+                logger.trace(f"tracker={tr_id}, len(tracker.frame)={len(tracker.region)}")
+                for fr_i, fr in enumerate(tracker.region):
                     row = {
                         "id_obj": tracker.id,
-                        "y_px": (tracker.bbox[fr_i][0] + tracker.bbox[fr_i][2])/2.,
-                        "x_px": (tracker.bbox[fr_i][1] + tracker.bbox[fr_i][3])/2.,
-                        "bbox_top_px": tracker.bbox[fr_i][0], # 0 y
-                        "bbox_left_px": tracker.bbox[fr_i][1], # 0 x
-                        "bbox_bottom_px": tracker.bbox[fr_i][2], # 1 y
-                        "bbox_right_px": tracker.bbox[fr_i][3], # 1 x
+                        "y_px": (tracker.region[fr_i].bbox[0] + tracker.region[fr_i].bbox[2])/2.,
+                        "x_px": (tracker.region[fr_i].bbox[1] + tracker.region[fr_i].bbox[3])/2.,
+                        "bbox_top_px": tracker.region[fr_i].bbox[0], # 0 y
+                        "bbox_left_px": tracker.region[fr_i].bbox[1], # 0 x
+                        "bbox_bottom_px": tracker.region[fr_i].bbox[2], # 1 y
+                        "bbox_right_px": tracker.region[fr_i].bbox[3], # 1 x
                         "t_frame": tracker.frame[fr_i],
                         "area_px": tracker.region[fr_i].area,
                         # TODO prosím doplnit jméno předka
-                        "id_parent": str(tracker.parents),
+                        # "id_parent": str(tracker.parents),
                     }
 
 
@@ -499,7 +499,7 @@ class CellTrack:
         from PyQt5 import QtWidgets
 
         default_dir = io3d.datasets.join_path(get_root=True)
-        # default_dir = op.expanduser("~/data")
+        # default_dir = op.expanduser(r"d:\work\roots\data")
         if not op.exists(default_dir):
             default_dir = op.expanduser("~")
 
