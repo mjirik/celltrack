@@ -64,6 +64,8 @@ setup(
         # "sample3": ["celltrack/celltrack_icon512.ico"],
         "sample4": ["celltrack_icon512.png"],
         "sample5": ["celltrack_icon512.ico"],
+        "logo_fav": ["logo_fav.png"],
+        "logo_fav": ["logo_prifuk.png"]
         # "segmentation_model": ["scaffan/segmentation_model.pkl"],
         # "segmentation_model_default": ["scaffan/segmentation_model_default.pkl"],
         # "cnn_model": ["scaffan/model/posenet_highLR.model"],

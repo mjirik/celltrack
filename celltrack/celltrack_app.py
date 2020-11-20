@@ -27,6 +27,8 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QWidget,
     QPushButton,
+    QGroupBox,
+    QHBoxLayout,
 )
 from PyQt5.QtGui import QIcon
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -760,19 +762,37 @@ class CellTrack:
         win = QtGui.QWidget()
         win.setWindowTitle("CellTrack {}".format(celltrack.__version__))
         logo_fn = op.join(op.dirname(__file__), "celltrack_icon512.png")
+        logo_fav_fn = op.join(op.dirname(__file__), "logo_fav.png")
+        logo_prifuk = op.join(op.dirname(__file__), "logo_prifuk.png")
         app_icon = QtGui.QIcon()
         # app_icon.addFile(logo_fn, QtCore.QSize(16, 16))
         app_icon.addFile(logo_fn)
         win.setWindowIcon(app_icon)
         # qapp.setWindowIcon(app_icon)
+
         layout = QtGui.QGridLayout()
         layout.setColumnStretch(0, 2)
         layout.setColumnStretch(1, 3)
-        # layout.setColumnStretch(2, 3)
         win.setLayout(layout)
+
+        # layout.setColumnStretch(2, 3)
+        logolink = QGroupBox("Created by")
+        logolink_layout = QtGui.QGridLayout()
+        logolink.setLayout(logolink_layout)
+
         pic = QtGui.QLabel()
-        pic.setPixmap(QtGui.QPixmap(logo_fn).scaled(50, 50))
+        urlLink = "<a href=\"http://www.google.com\">'Click this link to go to Google'</a>"
+        pic.setText(urlLink)
+        pic.setPixmap(QtGui.QPixmap(logo_fav_fn).scaled(50, 50))
+        pic.setOpenExternalLinks(True)
         pic.show()
+
+        urlLink = "<a href=\"http://www.google.com\">'Click this link to go to Google'</a>"
+        pic2 = QtGui.QLabel()
+        pic2.setText(urlLink)
+        pic2.setPixmap(QtGui.QPixmap(logo_prifuk).scaled(50, 50))
+        pic2.setOpenExternalLinks(True)
+        pic2.show()
 
         # self.image1 = PlotCanvas()
         # self.image1.axes.set_axis_off()
@@ -795,7 +815,10 @@ class CellTrack:
         # self.image2.setPixmap(QtGui.QPixmap(logo_fn).scaled(100, 100))
         # self.image2.show()
         # layout.addWidget(QtGui.QLabel("These are two views of the same data. They should always display the same values."), 0,  0, 1, 2)
-        layout.addWidget(pic, 1, 0, 1, 1)
+        logolink_layout.addWidget(pic, 1, 0, 1, 1)
+        logolink_layout.addWidget(pic2, 1, 1, 1, 1)
+
+        layout.addWidget(logolink, 1, 0, 1, 1)
         layout.addWidget(t, 2, 0, 1, 1)
         # layout.addWidget(NavigationToolbar(self.image2, win),1, 2, 1, 1)
         layout.addWidget(NavigationToolbar(self.image2, win),1, 1, 1, 1)
