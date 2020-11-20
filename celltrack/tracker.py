@@ -410,7 +410,7 @@ class Tracking:
                 "value": 0,
                 # "suffix": "m",
                 # "siPrefix": True,
-                "tip": "Size of morphologic element used on preprocessing. Should be comparable size as the cell.",
+                "tip": "Limit detection to some number of cells. Find all cells if 'Num. Peaks' is 0.",
             },
             # {
             #     "name": "Method",
@@ -465,17 +465,22 @@ class Tracking:
             {"name": "Min. object size", "type": "float", "value": 0.00000000002, "suffix": "m^2", "siPrefix": True,
              "tip": "Maximum number of processed frames. Use -1 for all frames processing."},
             {
-                "name": "Threshold Offset",
-                "type": "bool",
-                "value": True,
-                "tip": "Use the Threshold value as offset to automatic Otsu theshold selection.",
+                # "name": "Threshold Offset",
+                # "type": "bool",
+                # "value": True,
+
+                "name": "Threshold Mode",
+                "type": "list",
+                "value": "offset",
+                "values": ["absolute", "offset"],
+                "tip": "Use the 'offset' value to use threshold as an offset to the automatic per-frame Otsu theshold selection.",
             },
             {
                 "name": "Threshold",
                 "type": "int",
                 "value": 0,
-                "tip": "Minimal intensity value for cell. " + \
-                       "If Threshold Offset is set, the value is relative to automatic threshold selection.",
+                "tip": "Minimal intensity value for cell in 'absolute' Threshold Mode. " + \
+                       "If Threshold Mode is set to 'offset', the value is relative to automatic threshold selection.",
             },
             # {
             #     "name": "Gaussian noise mean",
@@ -629,16 +634,18 @@ class Tracking:
         :return:
         """
 
+        logger.info("Tracking...")
         # manager = TrackerManager()
         manager = FeatureTrackerManager(region_size_limit=max_distance, inactivity_time=2)
         # manager.set_max_distance(max_distance)
 
+        len_frames = len(frames)
         for frame_id, frame in enumerate(frames):
             # print(frame_id, len(frame))
             # manager.next_frame(len(frame))
 
             manager.next_frame(frame)
-            print(manager.tracker_to_obj_map[frame_id].shape)
+            logger.debug(f"processing frame {frame_id}/{len_frames} - shape={manager.tracker_to_obj_map[frame_id].shape}")
 
             # for region_id, region in enumerate(frame):
             #
@@ -695,12 +702,13 @@ class Tracking:
         from skimage import (
             color, feature, filters, io, measure, morphology, segmentation, util
         )
+        logger.info("Detection...")
         # 500 nm
         # resolution = [1, 0.000000500, 0.000000500]
         # 5000 nm = 5 um
         # gaussian_sigma_xy = 0.000001000
         # gaussian_sigma_t = 1
-        is_offset = int(self.parameters.param("Threshold Offset").value())
+        is_offset = str(self.parameters.param("Threshold Mode").value()) == 'offset'
         thr = int(self.parameters.param("Threshold").value())
         gaussian_sigma_xy = float(self.parameters.param("Gaussian Sigma XY").value())
         gaussian_sigma_t = float(self.parameters.param("Gaussian Sigma T").value())
@@ -807,7 +815,7 @@ class Tracking:
                 # plt.imshow(imf)
                 plt.show()
             frames.append(regions_props)
-            logger.info(
+            logger.debug(
                 'Frame ' + str(idx) + '/' + str(frames_c) + ' done. Found ' + str(len(regions_props)) + ' cells.')
             if self.debug_image:
                 self._thr_image[idx, :, :] = thr_image
