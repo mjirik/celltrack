@@ -4,8 +4,9 @@
 
 * [changed] Reworked tracker manager and Tracker class
 * [added] Per-frame thresholding
-* [changed] Relative and absolute threshold
+* [added] Relative and absolute threshold
 * [changed] Non-maximum suppression detector used
+* [added] University logos
 
 ## 0.2
 

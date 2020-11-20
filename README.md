@@ -1,6 +1,7 @@
 # CellTrack
 Tracking of roots in microscopy images.
 
+Check [changelog](changelog.md) to see what is new.
 
 # Install 
 
@@ -33,3 +34,16 @@ python -m celltrack
 
 # GUI
 ![graphics](docs/graphics/screenshot_gui03.png)
+
+
+# Uninstall 
+
+1. Use terminal to remove celltrack environment
+
+```
+conda remove --name celltrack --all
+```
+
+2. Manually remove icon from your desktop
+
+3. You can uninstall Conda by deleting conda directory in your home dir
