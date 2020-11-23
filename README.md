@@ -33,7 +33,7 @@ python -m celltrack
 ```
 
 # GUI
-![graphics](docs/graphics/screenshot_gui03.png)
+![graphics](docs/graphics/screenshot_gui05.png)
 
 
 # Uninstall 
